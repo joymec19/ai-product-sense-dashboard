@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: "deepseek/deepseek-chat",
         temperature: 0.2,
+        max_tokens: 4096,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
