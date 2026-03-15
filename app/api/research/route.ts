@@ -63,19 +63,24 @@ export async function POST(req: NextRequest) {
     }
 
     // ── LLM fetch call ──────────────────────────────────────────
-    const llmResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    const llmResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "https://ai-product-sense.vercel.app",
+        "X-Title": "AI Product Sense Dashboard",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "deepseek/deepseek-chat",
         temperature: 0.2,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
+          {
+            role: "user",
+            content: `Analyze the competitive landscape for this category: "${category_input.trim()}"`,
+          },
         ],
       }),
     });
