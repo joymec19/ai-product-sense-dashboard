@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
         "X-Title": "AI Product Sense Dashboard",
       },
       body: JSON.stringify({
-        model: "deepseek/deepseek-chat",
+        model: "nvidia/nemotron-3-super-120b-a12b:free",
         temperature: 0.2,
         max_tokens: 4096,
         response_format: { type: "json_object" },
