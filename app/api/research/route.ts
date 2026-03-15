@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
           { role: "system", content: SYSTEM_PROMPT },
           {
             role: "user",
-            content: `Analyze the competitive landscape for this category: "${category_input.trim()}"`,
+            content: userPrompt,
           },
         ],
       }),
