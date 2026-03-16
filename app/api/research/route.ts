@@ -53,38 +53,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Build user prompt with optional context
-    let userPrompt = `Analyze the competitive landscape for this category: "${category_input.trim()}"`;
-    if (market_scope) {
-      userPrompt += `\nMarket scope: ${market_scope}`;
-    }
-    if (home_product_context) {
-      userPrompt += `\nAdditional product context:\n${home_product_context}`;
-    }
-
     // ── LLM fetch call ──────────────────────────────────────────
-    const llmResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "HTTP-Referer": "https://ai-product-sense.vercel.app",
-        "X-Title": "AI Product Sense Dashboard",
-      },
-      body: JSON.stringify({
-        model: "nvidia/nemotron-3-super-120b-a12b:free",
-        temperature: 0.2,
-        max_tokens: 4096,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: userPrompt,
-          },
-        ],
-      }),
-    });
+    let llmResponse: Response;
+    try {
+      llmResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "HTTP-Referer": "https://ai-product-sense.vercel.app",
+          "X-Title": "AI Product Sense Dashboard",
+        },
+        body: JSON.stringify({
+          model: "nvidia/nemotron-3-super-120b-a12b:free", // or your chosen model
+          temperature: 0.2,
+          max_tokens: 4096,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            {
+              role: "user",
+              content: `Analyze the competitive landscape for this category: "${category_input.trim()}"`,
+            },
+          ],
+        }),
+      });
+    } catch (error) {
+      console.error("[LLM Network Error]", error);
+      return NextResponse.json(
+        { error: "LLM network error. Please retry in a few seconds." },
+        { status: 502 },
+      );
+    }
 
     if (!llmResponse.ok) {
       const errorBody = await llmResponse.text();
