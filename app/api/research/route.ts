@@ -105,8 +105,19 @@ export async function POST(req: NextRequest) {
     // ── Parse & validate ──────────────────────────────────────────
     let parsed: unknown;
     try {
-      parsed = JSON.parse(rawContent);
-    } catch {
+      const text = rawContent.trim();
+
+      // Try to isolate the JSON object if there is extra text or code fences
+      const firstBrace = text.indexOf("{");
+      const lastBrace = text.lastIndexOf("}");
+      const jsonString =
+        firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace
+          ? text.slice(firstBrace, lastBrace + 1)
+          : text;
+
+      parsed = JSON.parse(jsonString);
+    } catch (e) {
+      console.error("[LLM JSON Parse Error]", e, rawContent);
       return NextResponse.json({ error: "LLM returned malformed JSON." }, { status: 502 });
     }
 
