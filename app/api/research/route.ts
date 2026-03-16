@@ -159,6 +159,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Insert competitors linked by analysis_id
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { data: insertedCompetitors, error: competitorsError } = await supabase
       .from("competitors")
       .insert(
