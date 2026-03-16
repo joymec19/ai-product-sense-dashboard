@@ -142,9 +142,9 @@ export async function POST(req: NextRequest) {
     const { data: insertedAnalysis, error: analysisError } = await supabase
       .from("analyses")
       .insert({
-        category: category_input.trim(),
-        market_scope: market_scope || null,
-        home_product_context: home_product_context || null,
+        category_input: category_input.trim(),
+        home_product_context,
+        market_scope,
         created_at: new Date().toISOString(),
       })
       .select("id")
