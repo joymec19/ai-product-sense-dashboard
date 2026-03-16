@@ -159,27 +159,32 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Insert competitors linked by analysis_id
-    const competitorRows = competitors.map((c) => ({
-      analysis_id: insertedAnalysis.id,
-      name: c.name,
-      pricing: c.pricing,
-      features: c.features,
-      ratings: c.ratings,
-      positioning: c.positioning,
-      strengths: c.strengths,
-      weaknesses: c.weaknesses,
-      gaps: c.gaps,
-      scores: c.scores,
-    }));
-
-    const { error: competitorsError } = await supabase
+    const { data: insertedCompetitors, error: competitorsError } = await supabase
       .from("competitors")
-      .insert(competitorRows);
+      .insert(
+        competitors.map((c) => ({
+          analysis_id: insertedAnalysis.id, // or whatever FK column you use
+          name: c.name,
+          pricing: c.pricing,           // jsonb column
+          features: c.features,         // jsonb or text[] column
+          ratings: c.ratings,           // jsonb column
+          positioning: c.positioning,
+          strengths: c.strengths,       // jsonb column
+          weaknesses: c.weaknesses,     // jsonb column
+          gaps: c.gaps,                 // jsonb column
+          // flattened scores fields — no `scores` key
+          market_presence: c.scores.market_presence,
+          product_depth: c.scores.product_depth,
+          ease_of_use: c.scores.ease_of_use,
+          value_for_money: c.scores.value_for_money,
+          innovation: c.scores.innovation,
+        }))
+      );
 
     if (competitorsError) {
       console.error("[Supabase Competitors Insert Error]", competitorsError);
       return NextResponse.json(
-        { error: "Failed to persist competitors.", detail: competitorsError.message },
+        { error: "Failed to persist competitors." },
         { status: 500 }
       );
     }
