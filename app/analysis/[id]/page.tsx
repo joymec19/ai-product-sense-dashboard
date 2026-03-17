@@ -1,24 +1,40 @@
-interface AnalysisPageProps {
-  params: { id: string };
-}
+// app/analysis/[id]/page.tsx
+"use client";
 
-export default function AnalysisPage({ params }: AnalysisPageProps) {
+import { useParams } from "next/navigation";
+import PRDEditor from "@/components/prd/PRDEditor";
+
+export default function AnalysisPage() {
+  const params = useParams<{ id: string }>();
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-100 px-4 dark:bg-zinc-900">
-      <div className="w-full max-w-2xl space-y-4 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-          Analysis {params.id}
-        </h1>
-        <p className="text-zinc-500 dark:text-zinc-400">
-          Your competitive analysis has been generated. Full dashboard coming
-          soon.
-        </p>
-        <a
-          href="/"
-          className="inline-block rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
-        >
-          Back to Home
-        </a>
+    <div className="flex min-h-screen bg-zinc-100 dark:bg-zinc-900">
+      {/* Left panel — PRD Editor */}
+      <div className="w-1/2 overflow-y-auto border-r border-border p-6">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              PRD Editor
+            </h1>
+            <a
+              href="/"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Back
+            </a>
+          </div>
+          <PRDEditor analysisId={params.id} />
+        </div>
+      </div>
+
+      {/* Right panel — placeholder */}
+      <div className="w-1/2 overflow-y-auto p-6">
+        {/* TODO: Right panel content — competitive analysis dashboard, export options, etc. */}
+        <div className="flex h-full items-center justify-center">
+          <p className="text-sm text-muted-foreground">
+            Right panel — coming soon
+          </p>
+        </div>
       </div>
     </div>
   );
