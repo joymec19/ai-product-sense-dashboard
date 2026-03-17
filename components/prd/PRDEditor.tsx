@@ -122,8 +122,12 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
     setError(null);
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 90000); // 90s client timeout
+
       const res = await fetch("/api/generate-prd", {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           analysis_id: researchReportId,
@@ -131,6 +135,8 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
           home_product_context: homeProductContext,
         }),
       });
+
+      clearTimeout(timeout);
 
       const data = await res.json();
 
@@ -142,8 +148,12 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
       setPrdId(data.prd_id);
       setPrd(data.prd);
       toast("PRD generated successfully!", "success");
-    } catch {
-      toast("Network error while generating PRD. Please try again.", "error");
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        toast("PRD generation timed out. The AI model took too long to respond. Please try again.", "error");
+      } else {
+        toast("Network error while generating PRD. Please try again.", "error");
+      }
     } finally {
       setGenerating(false);
     }

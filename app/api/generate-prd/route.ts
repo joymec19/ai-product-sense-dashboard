@@ -34,143 +34,6 @@ Using this input, produce a PRD JSON object that conforms exactly to the provide
 
 Return ONLY the JSON object. No markdown, no commentary, no preamble.`;
 
-// ── Inline JSON schema for response_format ───────────────────────────────────
-const PRD_JSON_SCHEMA = {
-  name: "PRDDocument",
-  strict: true,
-  schema: {
-    type: "object",
-    required: [
-      "objective","problem_statement","solution_narrative",
-      "personas","features","success_metrics","risks","gtm",
-    ],
-    additionalProperties: false,
-    properties: {
-      objective: { type: "string" },
-      problem_statement: { type: "string" },
-      solution_narrative: { type: "string" },
-      personas: {
-        type: "array",
-        items: {
-          type: "object",
-          required: ["name","role","goals","pain_points","tech_savviness"],
-          additionalProperties: false,
-          properties: {
-            name: { type: "string" },
-            role: { type: "string" },
-            goals: { type: "array", items: { type: "string" } },
-            pain_points: { type: "array", items: { type: "string" } },
-            tech_savviness: { type: "string", enum: ["low","medium","high"] },
-          },
-        },
-      },
-      features: {
-        type: "object",
-        required: ["p1","p2","p3"],
-        additionalProperties: false,
-        properties: {
-          p1: {
-            type: "array",
-            items: {
-              type: "object",
-              required: ["id","title","description","user_story","acceptance_criteria"],
-              additionalProperties: false,
-              properties: {
-                id: { type: "string" },
-                title: { type: "string" },
-                description: { type: "string" },
-                user_story: { type: "string" },
-                acceptance_criteria: { type: "array", items: { type: "string" } },
-              },
-            },
-          },
-          p2: {
-            type: "array",
-            items: {
-              type: "object",
-              required: ["id","title","description","user_story","acceptance_criteria"],
-              additionalProperties: false,
-              properties: {
-                id: { type: "string" },
-                title: { type: "string" },
-                description: { type: "string" },
-                user_story: { type: "string" },
-                acceptance_criteria: { type: "array", items: { type: "string" } },
-              },
-            },
-          },
-          p3: {
-            type: "array",
-            items: {
-              type: "object",
-              required: ["id","title","description"],
-              additionalProperties: false,
-              properties: {
-                id: { type: "string" },
-                title: { type: "string" },
-                description: { type: "string" },
-              },
-            },
-          },
-        },
-      },
-      success_metrics: {
-        type: "array",
-        items: {
-          type: "object",
-          required: ["metric","target","measurement_method","timeframe"],
-          additionalProperties: false,
-          properties: {
-            metric: { type: "string" },
-            target: { type: "string" },
-            measurement_method: { type: "string" },
-            timeframe: { type: "string" },
-          },
-        },
-      },
-      risks: {
-        type: "array",
-        items: {
-          type: "object",
-          required: ["risk","likelihood","impact","mitigation"],
-          additionalProperties: false,
-          properties: {
-            risk: { type: "string" },
-            likelihood: { type: "string", enum: ["low","medium","high"] },
-            impact: { type: "string", enum: ["low","medium","high"] },
-            mitigation: { type: "string" },
-          },
-        },
-      },
-      gtm: {
-        type: "object",
-        required: ["target_segment","positioning_statement","channels","pricing_strategy","launch_phases"],
-        additionalProperties: false,
-        properties: {
-          target_segment: { type: "string" },
-          positioning_statement: { type: "string" },
-          channels: { type: "array", items: { type: "string" } },
-          pricing_strategy: { type: "string" },
-          launch_phases: {
-            type: "array",
-            items: {
-              type: "object",
-              required: ["phase","name","duration","goals"],
-              additionalProperties: false,
-              properties: {
-                phase: { type: "integer" },
-                name: { type: "string" },
-                duration: { type: "string" },
-                goals: { type: "array", items: { type: "string" } },
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-};
-
 // ── Request body type ─────────────────────────────────────────────────────────
 interface GeneratePRDRequestBody {
   analysis_id: string;
@@ -201,8 +64,12 @@ export async function POST(req: NextRequest) {
     });
 
     // ── OpenRouter fetch (Nemotron 3 Super) ─────────────────────────────────
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 55000); // 55s — leave 5s buffer for DB write
+
     const llmResponse = await fetch(OPENROUTER_API_URL, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -213,16 +80,15 @@ export async function POST(req: NextRequest) {
         model: NEMOTRON_MODEL,
         temperature: 0.3,
         max_tokens: 8192,
-        response_format: {
-          type: "json_schema",
-          json_schema: PRD_JSON_SCHEMA,
-        },
+        response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userMessage },
         ],
       }),
     });
+
+    clearTimeout(timeout);
 
     if (!llmResponse.ok) {
       const errorBody = await llmResponse.text();
@@ -301,6 +167,10 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      console.error("[Timeout] LLM call timed out after 55s");
+      return NextResponse.json({ error: "PRD generation timed out. Please try again." }, { status: 504 });
+    }
     console.error("[Unhandled Error]", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
