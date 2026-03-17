@@ -12,6 +12,8 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { useToast } from "@/components/ui/toast";
+import PRDSkeleton from "@/components/prd/PRDSkeleton";
 import { Loader2, RefreshCw, FileText } from "lucide-react";
 
 interface PRDEditorProps {
@@ -24,6 +26,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Context needed for generation
   const [researchReportId, setResearchReportId] = useState<string | null>(null);
@@ -65,7 +68,6 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
         .single();
 
       if (reportErr || !report) {
-        // No research report found — can't generate PRD yet
         setError("No research report found for this analysis category.");
         setLoading(false);
         return;
@@ -133,26 +135,32 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to generate PRD.");
+        toast(data.error || "Failed to generate PRD. Please try again.", "error");
         return;
       }
 
       setPrdId(data.prd_id);
       setPrd(data.prd);
+      toast("PRD generated successfully!", "success");
     } catch {
-      setError("Network error while generating PRD.");
+      toast("Network error while generating PRD. Please try again.", "error");
     } finally {
       setGenerating(false);
     }
   };
 
-  // ── Loading state ──────────────────────────────
+  // ── Initial loading state ──────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  // ── Generating state — show skeleton ───────────
+  if (generating) {
+    return <PRDSkeleton />;
   }
 
   // ── No PRD state — show generate button ────────
@@ -171,20 +179,8 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
           disabled={generating || !researchReportId}
           size="lg"
         >
-          {generating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating PRD...
-            </>
-          ) : (
-            "Generate PRD"
-          )}
+          Generate PRD
         </Button>
-        {generating && (
-          <p className="text-xs text-muted-foreground">
-            This may take 30–60 seconds
-          </p>
-        )}
       </div>
     );
   }
@@ -192,9 +188,6 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
   // ── PRD exists — render accordion ──────────────
   return (
     <div className="space-y-4">
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Product Requirements Document</h2>
         {prdId && (
