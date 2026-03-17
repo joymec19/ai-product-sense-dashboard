@@ -190,6 +190,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 3. Insert into research_reports (needed for PRD generation FK)
+    const { error: reportError } = await supabase
+      .from("research_reports")
+      .insert({
+        category: category_input.trim(),
+        competitors: competitors,
+      });
+
+    if (reportError) {
+      console.error("[Supabase Research Report Insert Error]", reportError);
+      // Non-blocking: the analysis still works, PRD generation just won't find the report
+    }
+
     return NextResponse.json(
       { analysis_id: insertedAnalysis.id, category: category_input.trim(), competitors },
       { status: 200 }
