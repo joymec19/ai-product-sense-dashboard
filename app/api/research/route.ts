@@ -9,33 +9,26 @@ function getSupabase() {
   );
 }
 
-const SYSTEM_PROMPT = `You are a senior market research analyst. When given a product category, return ONLY a valid JSON object with a single key "competitors" containing an array of 6 to 10 competitor objects. Each object must strictly follow this structure:
+const SYSTEM_PROMPT = `You are a senior market research analyst.
+
+CRITICAL INSTRUCTIONS:
+- Your ENTIRE response must be a single valid JSON object.
+- Start your response with { and end with }
+- Do NOT use markdown code fences (\`\`\`json or \`\`\`).
+- Do NOT include any text, explanation, or commentary before or after the JSON.
+
+Return a JSON object with a single key "competitors" containing an array of 6 to 10 objects. Each object must have exactly these fields:
 {
   "name": string,
-  "pricing": {
-    "model": string,
-    "starting_price_usd": number | null,
-    "has_free_tier": boolean
-  },
-  "features": string[],
-  "ratings": {
-    "g2": number | null,
-    "capterra": number | null,
-    "overall": number
-  },
+  "pricing": { "model": string, "starting_price_usd": number or null, "has_free_tier": boolean },
+  "features": array of strings,
+  "ratings": { "g2": number or null, "capterra": number or null, "overall": number between 1 and 5 },
   "positioning": string,
-  "strengths": string[],
-  "weaknesses": string[],
-  "gaps": string[],
-  "scores": {
-    "market_presence": number,
-    "product_depth": number,
-    "ease_of_use": number,
-    "value_for_money": number,
-    "innovation": number
-  }
-}
-Return ONLY the JSON. No markdown, no explanation, no commentary.`;
+  "strengths": array of strings,
+  "weaknesses": array of strings,
+  "gaps": array of strings,
+  "scores": { "market_presence": number 1-10, "product_depth": number 1-10, "ease_of_use": number 1-10, "value_for_money": number 1-10, "innovation": number 1-10 }
+}`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -65,10 +58,9 @@ export async function POST(req: NextRequest) {
           "X-Title": "AI Product Sense Dashboard",
         },
         body: JSON.stringify({
-          model: "nvidia/nemotron-3-super-120b-a12b:free", // or your chosen model
+          model: "nvidia/nemotron-3-super-120b-a12b:free",
           temperature: 0.2,
           max_tokens: 4096,
-          response_format: { type: "json_object" },
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             {

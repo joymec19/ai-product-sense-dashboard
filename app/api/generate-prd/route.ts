@@ -14,25 +14,27 @@ const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const NEMOTRON_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
 
 const SYSTEM_PROMPT = `You are a senior product manager and product strategist at a top-tier technology company.
-Your task is to generate a comprehensive, investor-grade Product Requirements Document (PRD) in strict JSON.
+Your task is to generate a comprehensive, investor-grade Product Requirements Document (PRD).
 
 You will receive:
 1. A "home_product_context": a description of the product being built.
 2. A "competitors" array: structured competitive research data.
 
-Using this input, produce a PRD JSON object that conforms exactly to the provided JSON schema. Rules:
+CRITICAL INSTRUCTIONS:
+- Your ENTIRE response must be a single valid JSON object.
+- Start your response with { and end with }
+- Do NOT use markdown code fences (\`\`\`json or \`\`\`).
+- Do NOT include any text, explanation, or commentary before or after the JSON.
+
+Produce a JSON object with exactly these keys:
 - "objective": One crisp north-star sentence for the product.
 - "problem_statement": Clearly articulate the validated market pain, grounded in the competitive gaps provided.
 - "solution_narrative": Describe the product solution, its differentiation, and why it wins against named competitors.
-- "personas": 2–5 realistic user personas derived from the competitive context.
-- "features.p1": Must-have launch features with full user stories and acceptance criteria. Minimum 3.
-- "features.p2": Important post-launch or v1.1 features. Minimum 2.
-- "features.p3": Nice-to-have / roadmap features. Minimum 2.
-- "success_metrics": Quantified, measurable KPIs (e.g. "30% MoM DAU growth within 90 days").
-- "risks": Realistic product, market, and technical risks with mitigations.
-- "gtm": A concrete go-to-market plan with segment, positioning, channels, pricing, and phased launch.
-
-Return ONLY the JSON object. No markdown, no commentary, no preamble.`;
+- "personas": Array of 2–5 objects, each with "name", "role", "pain_points" (array), "goals" (array).
+- "features": Object with keys "p1", "p2", "p3". Each is an array of objects with "title", "user_story", "acceptance_criteria" (array). p1 minimum 3 items, p2 minimum 2 items, p3 minimum 2 items.
+- "success_metrics": Array of quantified, measurable KPI strings (e.g. "30% MoM DAU growth within 90 days"). Minimum 3.
+- "risks": Array of objects with "risk", "category", "mitigation". Minimum 3.
+- "gtm": Object with "segment", "positioning", "channels" (array), "pricing", "launch_phases" (array of objects with "phase" and "actions" array).`;
 
 // ── Request body type ─────────────────────────────────────────────────────────
 interface GeneratePRDRequestBody {
@@ -78,9 +80,8 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: NEMOTRON_MODEL,
-        temperature: 0.3,
+        temperature: 0.2,
         max_tokens: 8192,
-        response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userMessage },
@@ -109,7 +110,17 @@ export async function POST(req: NextRequest) {
     // ── Parse JSON ──────────────────────────────────────────────────────────
     let parsedPRD: unknown;
     try {
-      parsedPRD = JSON.parse(rawContent);
+      const text = rawContent.trim();
+      // Strip markdown code fences if present
+      const stripped = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+      // Extract outermost JSON object
+      const firstBrace = stripped.indexOf("{");
+      const lastBrace = stripped.lastIndexOf("}");
+      const jsonString =
+        firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace
+          ? stripped.slice(firstBrace, lastBrace + 1)
+          : stripped;
+      parsedPRD = JSON.parse(jsonString);
     } catch {
       console.error("[PRD JSON Parse Error] Raw content:", rawContent.slice(0, 500));
       return NextResponse.json({ error: "LLM returned malformed JSON." }, { status: 502 });
