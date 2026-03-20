@@ -143,10 +143,13 @@ export async function POST(req: NextRequest) {
         firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace
           ? stripped.slice(firstBrace, lastBrace + 1)
           : stripped;
+      console.log("[PRD parse] after strip (first 300):", stripped.slice(0, 300));
+      console.log("[PRD parse] jsonString (first 300):", jsonString.slice(0, 300));
       parsedPRD = JSON.parse(jsonString);
-    } catch {
-      console.error("[PRD JSON Parse Error] Raw content:", rawContent.slice(0, 1000));
-      return NextResponse.json({ error: "LLM returned malformed JSON." }, { status: 502 });
+    } catch (e) {
+      console.error("[PRD JSON Parse Error]", String(e));
+      console.error("[PRD raw content]:", rawContent.slice(0, 2000));
+      return NextResponse.json({ error: "LLM returned malformed JSON.", raw: rawContent.slice(0, 500) }, { status: 502 });
     }
 
     // ── Zod validation ──────────────────────────────────────────────────────
