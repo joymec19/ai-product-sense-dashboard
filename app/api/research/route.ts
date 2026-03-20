@@ -56,9 +56,9 @@ export async function POST(req: NextRequest) {
           "api-subscription-key": process.env.SARVAM_API_KEY!,
         },
         body: JSON.stringify({
-          model: "sarvam-30b",
+          model: "sarvam-m",
           temperature: 0.2,
-          max_tokens: 4096,
+          max_tokens: 16384,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             {
@@ -86,12 +86,12 @@ export async function POST(req: NextRequest) {
     }
 
     const llmData = await llmResponse.json();
-    const rawContent = llmData.choices?.[0]?.message?.content;
-    console.log("[Sarvam raw content]", typeof rawContent, rawContent?.slice(0, 200));
+    const msg = llmData.choices?.[0]?.message;
+    const rawContent: string | undefined = msg?.content ?? msg?.reasoning_content;
 
     if (!rawContent) {
-      console.error("[Sarvam empty response] llmData:", JSON.stringify(llmData).slice(0, 500));
-      return NextResponse.json({ error: "Empty response from LLM." }, { status: 502 });
+      console.error("[Sarvam empty content] finish_reason:", llmData.choices?.[0]?.finish_reason, "Full:", JSON.stringify(llmData).slice(0, 500));
+      return NextResponse.json({ error: "Empty response from LLM.", sarvam_response: llmData }, { status: 502 });
     }
 
     // ── Parse & validate ──────────────────────────────────────────

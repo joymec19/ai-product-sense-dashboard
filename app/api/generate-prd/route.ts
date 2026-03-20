@@ -11,7 +11,7 @@ const supabase = createClient(
 
 // ── Sarvam config ─────────────────────────────────────────────────────────────
 const SARVAM_API_URL = "https://api.sarvam.ai/v1/chat/completions";
-const SARVAM_MODEL = "sarvam-30b";
+const SARVAM_MODEL = "sarvam-m";
 
 const SYSTEM_PROMPT = `You are a senior product manager and product strategist at a top-tier technology company.
 Your task is to generate a comprehensive, investor-grade Product Requirements Document (PRD).
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: SARVAM_MODEL,
         temperature: 0.2,
-        max_tokens: 8192,
+        max_tokens: 32768,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userMessage },
@@ -99,10 +99,12 @@ export async function POST(req: NextRequest) {
     }
 
     const llmData = await llmResponse.json();
-    const rawContent: string | undefined = llmData.choices?.[0]?.message?.content;
+    const msg = llmData.choices?.[0]?.message;
+    const rawContent: string | undefined = msg?.content ?? msg?.reasoning_content;
 
     if (!rawContent) {
-      return NextResponse.json({ error: "Empty response from LLM." }, { status: 502 });
+      console.error("[Sarvam empty content] finish_reason:", llmData.choices?.[0]?.finish_reason, "Full:", JSON.stringify(llmData).slice(0, 500));
+      return NextResponse.json({ error: "Empty response from LLM.", sarvam_response: llmData }, { status: 502 });
     }
 
     // ── Parse JSON ──────────────────────────────────────────────────────────
