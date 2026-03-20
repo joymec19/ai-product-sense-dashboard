@@ -26,15 +26,32 @@ CRITICAL INSTRUCTIONS:
 - Do NOT use markdown code fences (\`\`\`json or \`\`\`).
 - Do NOT include any text, explanation, or commentary before or after the JSON.
 
-Produce a JSON object with exactly these keys:
-- "objective": One crisp north-star sentence for the product.
-- "problem_statement": Clearly articulate the validated market pain, grounded in the competitive gaps provided.
-- "solution_narrative": Describe the product solution, its differentiation, and why it wins against named competitors.
-- "personas": Array of 2–5 objects, each with "name", "role", "pain_points" (array), "goals" (array).
-- "features": Object with keys "p1", "p2", "p3". Each is an array of objects with "title", "user_story", "acceptance_criteria" (array). p1 minimum 3 items, p2 minimum 2 items, p3 minimum 2 items.
-- "success_metrics": Array of quantified, measurable KPI strings (e.g. "30% MoM DAU growth within 90 days"). Minimum 3.
-- "risks": Array of objects with "risk", "category", "mitigation". Minimum 3.
-- "gtm": Object with "segment", "positioning", "channels" (array), "pricing", "launch_phases" (array of objects with "phase" and "actions" array).`;
+Produce a JSON object with EXACTLY these keys and shapes:
+
+- "objective": string — one crisp north-star sentence.
+- "problem_statement": string — validated market pain grounded in competitive gaps.
+- "solution_narrative": string — differentiation and why it wins against named competitors.
+- "personas": array of 2–5 objects, each with:
+    "name": string, "role": string, "pain_points": string[], "goals": string[],
+    "tech_savviness": one of "low" | "medium" | "high"
+- "features": object with keys "p1", "p2", "p3":
+    - "p1" and "p2": arrays of objects (p1 min 3 items, p2 min 2 items), each with:
+        "id": string (e.g. "p1-1"), "title": string, "description": string,
+        "user_story": string, "acceptance_criteria": string[]
+    - "p3": array of objects (min 2 items), each with:
+        "id": string (e.g. "p3-1"), "title": string, "description": string
+- "success_metrics": array of min 3 objects, each with:
+    "metric": string, "target": string, "measurement_method": string, "timeframe": string
+- "risks": array of min 3 objects, each with:
+    "risk": string,
+    "likelihood": one of "low" | "medium" | "high",
+    "impact": one of "low" | "medium" | "high",
+    "mitigation": string
+- "gtm": object with:
+    "target_segment": string, "positioning_statement": string, "channels": string[],
+    "pricing_strategy": string,
+    "launch_phases": array of objects, each with:
+        "phase": integer (1, 2, 3...), "name": string, "duration": string, "goals": string[]`;
 
 // ── Request body type ─────────────────────────────────────────────────────────
 interface GeneratePRDRequestBody {
