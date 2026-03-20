@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     try {
       const text = rawContent.trim();
       // Strip markdown code fences if present
-      const stripped = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+      const stripped = text.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
       // Extract outermost JSON object
       const firstBrace = stripped.indexOf("{");
       const lastBrace = stripped.lastIndexOf("}");
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
           : stripped;
       parsedPRD = JSON.parse(jsonString);
     } catch {
-      console.error("[PRD JSON Parse Error] Raw content:", rawContent.slice(0, 500));
+      console.error("[PRD JSON Parse Error] Raw content:", rawContent.slice(0, 1000));
       return NextResponse.json({ error: "LLM returned malformed JSON." }, { status: 502 });
     }
 

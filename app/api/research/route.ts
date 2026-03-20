@@ -87,8 +87,10 @@ export async function POST(req: NextRequest) {
 
     const llmData = await llmResponse.json();
     const rawContent = llmData.choices?.[0]?.message?.content;
+    console.log("[Sarvam raw content]", typeof rawContent, rawContent?.slice(0, 200));
 
     if (!rawContent) {
+      console.error("[Sarvam empty response] llmData:", JSON.stringify(llmData).slice(0, 500));
       return NextResponse.json({ error: "Empty response from LLM." }, { status: 502 });
     }
 
@@ -96,18 +98,20 @@ export async function POST(req: NextRequest) {
     let parsed: unknown;
     try {
       const text = rawContent.trim();
-
-      // Try to isolate the JSON object if there is extra text or code fences
-      const firstBrace = text.indexOf("{");
-      const lastBrace = text.lastIndexOf("}");
+      // Strip markdown code fences (handles ```json\n...\n``` patterns)
+      const stripped = text.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
+      // Extract outermost JSON object
+      const firstBrace = stripped.indexOf("{");
+      const lastBrace = stripped.lastIndexOf("}");
       const jsonString =
         firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace
-          ? text.slice(firstBrace, lastBrace + 1)
-          : text;
+          ? stripped.slice(firstBrace, lastBrace + 1)
+          : stripped;
 
       parsed = JSON.parse(jsonString);
     } catch (e) {
-      console.error("[LLM JSON Parse Error]", e, rawContent);
+      console.error("[LLM JSON Parse Error]", e);
+      console.error("[Raw content (first 1000 chars)]", rawContent.slice(0, 1000));
       return NextResponse.json({ error: "LLM returned malformed JSON." }, { status: 502 });
     }
 
