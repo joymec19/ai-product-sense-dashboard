@@ -145,7 +145,8 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        toast(data.error || "Failed to generate PRD. Please try again.", "error");
+        const msg = [data.error, data.detail].filter(Boolean).join(" — ");
+        toast(msg || "Failed to generate PRD. Please try again.", "error");
         return;
       }
 
