@@ -9,9 +9,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// ── OpenRouter / Nemotron config ──────────────────────────────────────────────
-const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const NEMOTRON_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
+// ── Sarvam config ─────────────────────────────────────────────────────────────
+const SARVAM_API_URL = "https://api.sarvam.ai/v1/chat/completions";
+const SARVAM_MODEL = "sarvam-30b";
 
 const SYSTEM_PROMPT = `You are a senior product manager and product strategist at a top-tier technology company.
 Your task is to generate a comprehensive, investor-grade Product Requirements Document (PRD).
@@ -65,21 +65,19 @@ export async function POST(req: NextRequest) {
       competitors,
     });
 
-    // ── OpenRouter fetch (Nemotron 3 Super) ─────────────────────────────────
+    // ── Sarvam fetch ─────────────────────────────────────────────────────────
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 55000); // 55s — leave 5s buffer for DB write
 
-    const llmResponse = await fetch(OPENROUTER_API_URL, {
+    const llmResponse = await fetch(SARVAM_API_URL, {
       method: "POST",
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://localhost:3000",
-        "X-Title": "PRD Generator",
+        "api-subscription-key": process.env.SARVAM_API_KEY!,
       },
       body: JSON.stringify({
-        model: NEMOTRON_MODEL,
+        model: SARVAM_MODEL,
         temperature: 0.2,
         max_tokens: 8192,
         messages: [
@@ -93,7 +91,7 @@ export async function POST(req: NextRequest) {
 
     if (!llmResponse.ok) {
       const errorBody = await llmResponse.text();
-      console.error("[OpenRouter Error]", llmResponse.status, errorBody);
+      console.error("[Sarvam Error]", llmResponse.status, errorBody);
       return NextResponse.json(
         { error: "LLM API call failed.", detail: errorBody },
         { status: 502 }

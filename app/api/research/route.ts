@@ -49,16 +49,14 @@ export async function POST(req: NextRequest) {
     // ── LLM fetch call ──────────────────────────────────────────
     let llmResponse: Response;
     try {
-      llmResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      llmResponse = await fetch("https://api.sarvam.ai/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "HTTP-Referer": "https://ai-product-sense.vercel.app",
-          "X-Title": "AI Product Sense Dashboard",
+          "api-subscription-key": process.env.SARVAM_API_KEY!,
         },
         body: JSON.stringify({
-          model: "nvidia/nemotron-3-super-120b-a12b:free",
+          model: "sarvam-30b",
           temperature: 0.2,
           max_tokens: 4096,
           messages: [
@@ -80,7 +78,7 @@ export async function POST(req: NextRequest) {
 
     if (!llmResponse.ok) {
       const errorBody = await llmResponse.text();
-      console.error("[LLM Error]", llmResponse.status, errorBody);
+      console.error("[Sarvam Error]", llmResponse.status, errorBody);
       return NextResponse.json(
         { error: "LLM API call failed.", detail: errorBody },
         { status: 502 }
