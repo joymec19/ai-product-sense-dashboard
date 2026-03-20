@@ -99,20 +99,26 @@ export async function POST(req: NextRequest) {
     }
 
     const llmData = await llmResponse.json();
-    const msg = llmData.choices?.[0]?.message;
-    const rawContent: string | undefined = msg?.content ?? msg?.reasoning_content;
+    const choice = llmData.choices?.[0];
+    const rawContent: string | undefined = choice?.message?.content;
 
     if (!rawContent) {
-      console.error("[Sarvam empty content] finish_reason:", llmData.choices?.[0]?.finish_reason, "Full:", JSON.stringify(llmData).slice(0, 500));
-      return NextResponse.json({ error: "Empty response from LLM.", sarvam_response: llmData }, { status: 502 });
+      const finishReason = choice?.finish_reason;
+      console.error("[Sarvam empty content] finish_reason:", finishReason, "Full:", JSON.stringify(llmData).slice(0, 500));
+      const error = finishReason === "length"
+        ? "LLM ran out of tokens before producing output. Please try again."
+        : "Empty response from LLM.";
+      return NextResponse.json({ error }, { status: 502 });
     }
 
     // ── Parse JSON ──────────────────────────────────────────────────────────
     let parsedPRD: unknown;
     try {
       const text = rawContent.trim();
+      // Strip <think>...</think> reasoning blocks
+      const noThink = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
       // Strip markdown code fences if present
-      const stripped = text.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
+      const stripped = noThink.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
       // Extract outermost JSON object
       const firstBrace = stripped.indexOf("{");
       const lastBrace = stripped.lastIndexOf("}");
