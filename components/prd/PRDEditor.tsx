@@ -26,6 +26,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savingSection, setSavingSection] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Context needed for generation
@@ -116,7 +117,10 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
   }, [fetchPRD]);
 
   const handleGenerate = async () => {
-    if (!researchReportId || !competitors || !homeProductContext) return;
+    if (!researchReportId || !competitors || !homeProductContext) {
+      toast("Cannot generate PRD: missing research report or product context.", "error");
+      return;
+    }
 
     setGenerating(true);
     setError(null);
@@ -159,6 +163,22 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
     }
   };
 
+  const saveSection = useCallback(async (field: string, value: unknown) => {
+    if (!prdId) return;
+    setSavingSection(field);
+    try {
+      const { error: dbError } = await supabase
+        .from("prd_documents")
+        .update({ [field]: value, updated_at: new Date().toISOString() })
+        .eq("id", prdId);
+      if (dbError) {
+        toast("Failed to save changes.", "error");
+      }
+    } finally {
+      setSavingSection(null);
+    }
+  }, [prdId, toast]);
+
   // ── Initial loading state ──────────────────────
   if (loading) {
     return (
@@ -200,9 +220,14 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Product Requirements Document</h2>
-        {prdId && (
-          <span className="text-xs text-muted-foreground">v{prd ? "1" : ""}</span>
-        )}
+        <div className="flex items-center gap-2">
+          {savingSection && (
+            <span className="text-xs text-muted-foreground">Saving...</span>
+          )}
+          {prdId && (
+            <span className="text-xs text-muted-foreground">v{prd ? "1" : ""}</span>
+          )}
+        </div>
       </div>
 
       <Accordion type="multiple" defaultValue={["objective"]} className="w-full">
@@ -225,6 +250,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
             <Textarea
               value={prd.objective}
               onChange={(e) => setPrd({ ...prd, objective: e.target.value })}
+              onBlur={() => saveSection("objective", prd.objective)}
               rows={3}
             />
           </AccordionContent>
@@ -249,6 +275,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
             <Textarea
               value={prd.problem_statement}
               onChange={(e) => setPrd({ ...prd, problem_statement: e.target.value })}
+              onBlur={() => saveSection("problem_statement", prd.problem_statement)}
               rows={5}
             />
           </AccordionContent>
@@ -273,6 +300,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
             <Textarea
               value={prd.solution_narrative}
               onChange={(e) => setPrd({ ...prd, solution_narrative: e.target.value })}
+              onBlur={() => saveSection("solution_narrative", prd.solution_narrative)}
               rows={5}
             />
           </AccordionContent>
@@ -301,6 +329,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
                   setPrd({ ...prd, personas: JSON.parse(e.target.value) });
                 } catch { /* ignore parse errors while editing */ }
               }}
+              onBlur={() => saveSection("personas", prd.personas)}
               rows={10}
               className="font-mono text-xs"
             />
@@ -330,6 +359,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
                   setPrd({ ...prd, features: { ...prd.features, p1: JSON.parse(e.target.value) } });
                 } catch { /* ignore */ }
               }}
+              onBlur={() => saveSection("features", prd.features)}
               rows={12}
               className="font-mono text-xs"
             />
@@ -359,6 +389,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
                   setPrd({ ...prd, features: { ...prd.features, p2: JSON.parse(e.target.value) } });
                 } catch { /* ignore */ }
               }}
+              onBlur={() => saveSection("features", prd.features)}
               rows={10}
               className="font-mono text-xs"
             />
@@ -388,6 +419,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
                   setPrd({ ...prd, features: { ...prd.features, p3: JSON.parse(e.target.value) } });
                 } catch { /* ignore */ }
               }}
+              onBlur={() => saveSection("features", prd.features)}
               rows={8}
               className="font-mono text-xs"
             />
@@ -417,6 +449,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
                   setPrd({ ...prd, success_metrics: JSON.parse(e.target.value) });
                 } catch { /* ignore */ }
               }}
+              onBlur={() => saveSection("success_metrics", prd.success_metrics)}
               rows={10}
               className="font-mono text-xs"
             />
@@ -446,6 +479,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
                   setPrd({ ...prd, risks: JSON.parse(e.target.value) });
                 } catch { /* ignore */ }
               }}
+              onBlur={() => saveSection("risks", prd.risks)}
               rows={10}
               className="font-mono text-xs"
             />
@@ -475,6 +509,7 @@ export default function PRDEditor({ analysisId }: PRDEditorProps) {
                   setPrd({ ...prd, gtm: JSON.parse(e.target.value) });
                 } catch { /* ignore */ }
               }}
+              onBlur={() => saveSection("gtm", prd.gtm)}
               rows={12}
               className="font-mono text-xs"
             />
