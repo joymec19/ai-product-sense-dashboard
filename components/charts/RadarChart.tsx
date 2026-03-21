@@ -82,7 +82,8 @@ export default function RadarChart({ competitors, homeProduct }: RadarChartProps
       <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-widest mb-4">
         Competitor Radar
       </h2>
-      <ResponsiveContainer width="100%" height={420}>
+      <div className="h-[280px] sm:h-[360px] md:h-[420px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
         <RechartsRadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
           <PolarGrid stroke="#3f3f46" strokeDasharray="3 3" />
           <PolarAngleAxis dataKey="axis" tick={(props) => <AxisTick {...props} />} />
@@ -139,6 +140,7 @@ export default function RadarChart({ competitors, homeProduct }: RadarChartProps
           />
         </RechartsRadarChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }

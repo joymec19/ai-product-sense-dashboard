@@ -53,7 +53,7 @@ export function TabsList({ className, children }: TabsListProps) {
     <div
       role="tablist"
       className={cn(
-        "inline-flex items-center gap-1 rounded-xl bg-zinc-800 p-1",
+        "flex items-center gap-1 rounded-xl bg-zinc-800 p-1 overflow-x-auto scrollbar-none",
         className
       )}
     >

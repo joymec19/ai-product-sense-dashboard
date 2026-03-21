@@ -77,11 +77,11 @@ export default function FeatureMatrix({ features, competitors }: FeatureMatrixPr
 
   return (
     <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-widest">
           Feature Matrix — P1
         </h2>
-        <div className="flex items-center gap-2 text-xs text-zinc-500">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
           <span className={`${STATUS_CONFIG.full.className} px-2 py-0.5 rounded-full`}>
             ✓ Full
           </span>

@@ -97,7 +97,7 @@ export default function PricingChart({ competitors }: PricingChartProps) {
       <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-widest mb-4">
         Pricing Landscape
       </h2>
-      <ResponsiveContainer width="100%" height={360}>
+      <ResponsiveContainer width="100%" height={competitors.length > 5 ? 360 : 280}>
         <BarChart
           data={data}
           layout="vertical"

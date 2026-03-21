@@ -58,6 +58,34 @@
   }
 }
 
+/* ── Scrollbar hide utility ─────────────────────────────────────────────── */
+.scrollbar-none {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* ── Staged loading progress bar animations ─────────────────────────────── */
+@keyframes progress-research {
+  from { width: 0%; }
+  to   { width: 60%; }
+}
+
+@keyframes progress-prd {
+  from { width: 60%; }
+  to   { width: 100%; }
+}
+
+.animate-progress-research {
+  animation: progress-research 8s ease-out forwards;
+}
+
+.animate-progress-prd {
+  animation: progress-prd 12s ease-out forwards;
+}
+
 @keyframes toast-slide-in {
   from {
     transform: translateY(1rem);
