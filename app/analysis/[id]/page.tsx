@@ -21,12 +21,14 @@ function AnalysisPageContent() {
   const { toast } = useToast();
   const [interviewerMode, setInterviewerMode] = useState(false);
   const [competitors, setCompetitors] = useState<CompetitorData[]>([]);
+  const [visible, setVisible] = useState(false);
   // Mobile top-level tab: "prd" | "dashboard"
   const [mobileTab, setMobileTab] = useState<"prd" | "dashboard">("prd");
 
-  // Hydrate from localStorage on mount
+  // Hydrate from localStorage on mount + trigger fade-in
   useEffect(() => {
     setInterviewerMode(localStorage.getItem("interviewerMode") === "true");
+    setVisible(true);
   }, []);
 
   // Fetch competitors from Supabase
@@ -80,11 +82,11 @@ function AnalysisPageContent() {
   // ── PRD panel (left) ────────────────────────────────────────────────────────
   const prdPanel = (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
           PRD Editor
         </h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Interviewer Mode toggle */}
           <button
             onClick={toggleInterviewerMode}
@@ -171,7 +173,11 @@ function AnalysisPageContent() {
   );
 
   return (
-    <div className={`bg-zinc-100 dark:bg-zinc-950 min-h-screen ${interviewerMode ? "pb-12" : ""}`}>
+    <div
+      className={`bg-zinc-100 dark:bg-zinc-950 min-h-screen transition-opacity duration-300 ${
+        visible ? "opacity-100" : "opacity-0"
+      } ${interviewerMode ? "pb-12" : ""}`}
+    >
 
       {/* ── Mobile tab switcher (hidden on md+) ─────────────────────────────── */}
       <div className="md:hidden sticky top-0 z-30 bg-zinc-900 border-b border-zinc-800 px-4 py-2 flex gap-2">

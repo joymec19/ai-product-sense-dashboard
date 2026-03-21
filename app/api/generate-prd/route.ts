@@ -4,10 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 import { PRDSchema, type PRDDocument } from "@/lib/schemas/prd";
 import type { Competitor } from "@/lib/schemas/competitor";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // ── Sarvam config ─────────────────────────────────────────────────────────────
 const SARVAM_API_URL = "https://api.sarvam.ai/v1/chat/completions";
@@ -168,6 +170,7 @@ export async function POST(req: NextRequest) {
     const prd: PRDDocument = validation.data;
 
     // ── Persist to Supabase ─────────────────────────────────────────────────
+    const supabase = getSupabase();
     const { data: insertedPRD, error: dbError } = await supabase
       .from("prd_documents")
       .insert({
