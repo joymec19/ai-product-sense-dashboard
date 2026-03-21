@@ -4,6 +4,7 @@ import RadarChart from "@/components/charts/RadarChart";
 import FeatureMatrix from "@/components/competitors/FeatureMatrix";
 import type { Competitor } from "@/lib/schemas/competitor";
 import type { PRDDocument } from "@/lib/schemas/prd";
+import type { CompetitorData, SupportStatus } from "@/lib/types/dashboard";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -44,7 +45,27 @@ export default async function SharePage({ params }: PageProps) {
     .limit(1)
     .single();
 
-  const competitors = (report?.competitors ?? []) as Competitor[];
+  const rawCompetitors = (report?.competitors ?? []) as Competitor[];
+
+  // Map legacy Competitor shape → CompetitorData for the new chart components
+  const competitors: CompetitorData[] = rawCompetitors.map((c) => ({
+    name: c.name,
+    pricing: c.pricing,
+    scores: {
+      ai_sophistication: c.scores.innovation ?? 0,
+      pricing_value: c.scores.value_for_money ?? 0,
+      mobile_ux: c.scores.ease_of_use ?? 0,
+      integrations: c.scores.product_depth ?? 0,
+      learning_curve: c.scores.ease_of_use ?? 0,
+    },
+    featureSupport: Object.fromEntries(
+      c.features.map((f) => [f, "full" as SupportStatus])
+    ),
+  }));
+
+  const allFeatures = Array.from(
+    new Set(rawCompetitors.flatMap((c) => c.features))
+  );
 
   // 3. Get PRD
   let prd: PRDDocument | null = null;
@@ -86,10 +107,7 @@ export default async function SharePage({ params }: PageProps) {
         {competitors.length > 0 && (
           <section>
             <h2 className="mb-4 text-xl font-semibold">Competitive Radar</h2>
-            <RadarChart
-              competitors={competitors}
-              tooltip="Compares 5 dimensions across all competitors"
-            />
+            <RadarChart competitors={competitors} />
           </section>
         )}
 
@@ -97,7 +115,7 @@ export default async function SharePage({ params }: PageProps) {
         {competitors.length > 0 && (
           <section>
             <h2 className="mb-4 text-xl font-semibold">Feature Matrix</h2>
-            <FeatureMatrix competitors={competitors} />
+            <FeatureMatrix features={allFeatures} competitors={competitors} />
           </section>
         )}
 
