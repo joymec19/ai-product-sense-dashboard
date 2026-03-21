@@ -72,3 +72,62 @@
 .animate-toast-in {
   animation: toast-slide-in 0.3s ease-out;
 }
+
+@media print {
+  /* White background, black text everywhere */
+  * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide right panel, nav bar, toast, and all buttons */
+  [data-panel="right"],
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Left panel takes full page width */
+  [data-panel="left"] {
+    width: 100% !important;
+    border: none !important;
+  }
+
+  /* Expand all accordion sections */
+  .hidden.print\:block,
+  [class*="hidden"] {
+    display: block !important;
+  }
+
+  /* PRD title styles */
+  .prd-title {
+    font-size: 1.75rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 1rem !important;
+    page-break-after: avoid;
+  }
+
+  /* Accordion items: sensible page breaks */
+  .border-b {
+    border-bottom: 1px solid #e5e7eb !important;
+    page-break-inside: avoid;
+  }
+
+  /* Ensure accordion triggers are visible */
+  h3 button {
+    display: flex !important;
+    font-weight: 600;
+  }
+
+  /* Textarea replaced by <p> in interviewer mode — keep readable */
+  p, li {
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  /* Remove page margin */
+  @page {
+    margin: 1.5cm;
+  }
+}
