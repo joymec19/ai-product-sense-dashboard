@@ -5,6 +5,13 @@ import FeatureMatrix from "@/components/competitors/FeatureMatrix";
 import type { Competitor } from "@/lib/schemas/competitor";
 import type { PRDDocument } from "@/lib/schemas/prd";
 import type { CompetitorData, SupportStatus } from "@/lib/types/dashboard";
+import {
+  DEMO_SHARE_TOKEN,
+  DEMO_CATEGORY,
+  DEMO_COMPETITORS,
+  DEMO_ALL_FEATURES,
+  DEMO_PRD,
+} from "@/lib/demo-data";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -17,81 +24,20 @@ function getSupabase() {
   );
 }
 
-export default async function SharePage({ params }: PageProps) {
-  const { id: shareToken } = await params;
-  const supabase = getSupabase();
-
-  // 1. Look up analysis by share_token
-  const { data: analysis, error: analysisErr } = await supabase
-    .from("analyses")
-    .select("id, category")
-    .eq("share_token", shareToken)
-    .single();
-
-  if (analysisErr || !analysis) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-white">
-        <p className="text-zinc-500">Analysis not found or link is invalid.</p>
-      </main>
-    );
-  }
-
-  // 2. Get research report (competitors)
-  const { data: report } = await supabase
-    .from("research_reports")
-    .select("id, competitors")
-    .eq("category", analysis.category)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
-
-  const rawCompetitors = (report?.competitors ?? []) as Competitor[];
-
-  // Map legacy Competitor shape → CompetitorData for the new chart components
-  const competitors: CompetitorData[] = rawCompetitors.map((c) => ({
-    name: c.name,
-    pricing: c.pricing,
-    scores: {
-      ai_sophistication: c.scores.innovation ?? 0,
-      pricing_value: c.scores.value_for_money ?? 0,
-      mobile_ux: c.scores.ease_of_use ?? 0,
-      integrations: c.scores.product_depth ?? 0,
-      learning_curve: c.scores.ease_of_use ?? 0,
-    },
-    featureSupport: Object.fromEntries(
-      c.features.map((f) => [f, "full" as SupportStatus])
-    ),
-  }));
-
-  const allFeatures = Array.from(
-    new Set(rawCompetitors.flatMap((c) => c.features))
-  );
-
-  // 3. Get PRD
-  let prd: PRDDocument | null = null;
-  if (report?.id) {
-    const { data: prdDoc } = await supabase
-      .from("prd_documents")
-      .select("*")
-      .eq("analysis_id", report.id)
-      .order("version", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (prdDoc) {
-      prd = {
-        objective: prdDoc.objective,
-        problem_statement: prdDoc.problem_statement,
-        solution_narrative: prdDoc.solution_narrative,
-        personas: prdDoc.personas,
-        features: prdDoc.features,
-        success_metrics: prdDoc.success_metrics,
-        risks: prdDoc.risks,
-        gtm: prdDoc.gtm,
-      };
-    }
-  }
-
+// ── Shared render ─────────────────────────────────────────────────────────────
+function SharePageContent({
+  category,
+  competitors,
+  allFeatures,
+  prd,
+  analysisHref,
+}: {
+  category: string;
+  competitors: CompetitorData[];
+  allFeatures: string[];
+  prd: PRDDocument | null;
+  analysisHref: string;
+}) {
   return (
     <main className="min-h-screen bg-white px-4 py-10 text-zinc-900">
       <div className="mx-auto max-w-3xl space-y-10">
@@ -100,7 +46,7 @@ export default async function SharePage({ params }: PageProps) {
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
             Product Analysis — Read Only
           </p>
-          <h1 className="mt-1 text-3xl font-bold">{analysis.category}</h1>
+          <h1 className="mt-1 text-3xl font-bold">{category}</h1>
         </div>
 
         {/* Radar Chart */}
@@ -161,7 +107,7 @@ export default async function SharePage({ params }: PageProps) {
         {/* View Full Analysis link */}
         <div className="border-t border-zinc-200 pt-6">
           <a
-            href={`/analysis/${analysis.id}`}
+            href={analysisHref}
             className="inline-flex items-center gap-1 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
           >
             View Full Analysis →
@@ -169,5 +115,104 @@ export default async function SharePage({ params }: PageProps) {
         </div>
       </div>
     </main>
+  );
+}
+
+export default async function SharePage({ params }: PageProps) {
+  const { id: shareToken } = await params;
+
+  // ── Demo shortcut: serve hardcoded data, no DB required ───────────────────
+  if (shareToken === DEMO_SHARE_TOKEN) {
+    return (
+      <SharePageContent
+        category={DEMO_CATEGORY}
+        competitors={DEMO_COMPETITORS}
+        allFeatures={DEMO_ALL_FEATURES}
+        prd={DEMO_PRD}
+        analysisHref="/"
+      />
+    );
+  }
+
+  // ── Live analysis: look up by share_token ─────────────────────────────────
+  const supabase = getSupabase();
+
+  const { data: analysis, error: analysisErr } = await supabase
+    .from("analyses")
+    .select("id, category")
+    .eq("share_token", shareToken)
+    .single();
+
+  if (analysisErr || !analysis) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white">
+        <p className="text-zinc-500">Analysis not found or link is invalid.</p>
+      </main>
+    );
+  }
+
+  // Get research report (competitors)
+  const { data: report } = await supabase
+    .from("research_reports")
+    .select("id, competitors")
+    .eq("category", analysis.category)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  const rawCompetitors = (report?.competitors ?? []) as Competitor[];
+
+  const competitors: CompetitorData[] = rawCompetitors.map((c) => ({
+    name: c.name,
+    pricing: c.pricing,
+    scores: {
+      ai_sophistication: c.scores.innovation ?? 0,
+      pricing_value: c.scores.value_for_money ?? 0,
+      mobile_ux: c.scores.ease_of_use ?? 0,
+      integrations: c.scores.product_depth ?? 0,
+      learning_curve: c.scores.ease_of_use ?? 0,
+    },
+    featureSupport: Object.fromEntries(
+      c.features.map((f) => [f, "full" as SupportStatus])
+    ),
+  }));
+
+  const allFeatures = Array.from(
+    new Set(rawCompetitors.flatMap((c) => c.features))
+  );
+
+  // Get PRD
+  let prd: PRDDocument | null = null;
+  if (report?.id) {
+    const { data: prdDoc } = await supabase
+      .from("prd_documents")
+      .select("*")
+      .eq("analysis_id", report.id)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (prdDoc) {
+      prd = {
+        objective: prdDoc.objective,
+        problem_statement: prdDoc.problem_statement,
+        solution_narrative: prdDoc.solution_narrative,
+        personas: prdDoc.personas,
+        features: prdDoc.features,
+        success_metrics: prdDoc.success_metrics,
+        risks: prdDoc.risks,
+        gtm: prdDoc.gtm,
+      };
+    }
+  }
+
+  return (
+    <SharePageContent
+      category={analysis.category}
+      competitors={competitors}
+      allFeatures={allFeatures}
+      prd={prd}
+      analysisHref={`/analysis/${analysis.id}`}
+    />
   );
 }
