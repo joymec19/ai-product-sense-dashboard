@@ -31,12 +31,14 @@ function SharePageContent({
   allFeatures,
   prd,
   analysisHref,
+  isDemoPage,
 }: {
   category: string;
   competitors: CompetitorData[];
   allFeatures: string[];
   prd: PRDDocument | null;
   analysisHref: string;
+  isDemoPage?: boolean;
 }) {
   return (
     <main className="min-h-screen bg-white px-4 py-10 text-zinc-900">
@@ -104,14 +106,49 @@ function SharePageContent({
           </section>
         )}
 
-        {/* View Full Analysis link */}
-        <div className="border-t border-zinc-200 pt-6">
-          <a
-            href={analysisHref}
-            className="inline-flex items-center gap-1 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
-          >
-            View Full Analysis →
-          </a>
+        {/* Bottom CTA */}
+        <div className="border-t border-zinc-200 pt-8">
+          {isDemoPage ? (
+            <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-6 space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-1">
+                  Demo — Read Only
+                </p>
+                <p className="text-base font-semibold text-zinc-800">
+                  Want this for your own product?
+                </p>
+                <p className="mt-1 text-sm text-zinc-500">
+                  Enter your product category to get a live competitive analysis + editable PRD in ~30 seconds.
+                </p>
+              </div>
+              <ul className="space-y-1.5 text-sm text-zinc-600">
+                {[
+                  "AI-generated competitive radar across 6–10 real competitors",
+                  "Full PRD editor — Objective, Personas, P1/P2/P3 Features, Risks, GTM",
+                  "Edit any section live and share a read-only link",
+                  "Interviewer Mode for clean presentation",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <span className="mt-0.5 text-indigo-400">✦</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="/"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+              >
+                Start your own analysis →
+              </a>
+            </div>
+          ) : (
+            <a
+              href={analysisHref}
+              className="inline-flex items-center gap-1 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
+            >
+              View Full Analysis →
+            </a>
+          )}
         </div>
       </div>
     </main>
@@ -130,6 +167,7 @@ export default async function SharePage({ params }: PageProps) {
         allFeatures={DEMO_ALL_FEATURES}
         prd={DEMO_PRD}
         analysisHref="/"
+        isDemoPage
       />
     );
   }

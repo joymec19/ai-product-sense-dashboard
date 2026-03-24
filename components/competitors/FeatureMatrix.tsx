@@ -101,9 +101,10 @@ export default function FeatureMatrix({ features, competitors }: FeatureMatrixPr
               {/* Sortable feature column */}
               <th
                 onClick={toggleSort}
-                className="sticky left-0 z-10 bg-zinc-800/80 cursor-pointer select-none
+                className="sticky left-0 z-10 bg-zinc-800 cursor-pointer select-none
                            text-left px-4 py-3 font-semibold text-zinc-300 whitespace-nowrap
-                           hover:text-indigo-400 transition-colors min-w-[180px]"
+                           hover:text-indigo-400 transition-colors min-w-[180px]
+                           shadow-[2px_0_8px_rgba(0,0,0,0.5)]"
               >
                 Feature
                 <span className="ml-1 text-zinc-500 text-xs">
@@ -131,12 +132,12 @@ export default function FeatureMatrix({ features, competitors }: FeatureMatrixPr
                 key={feature}
                 className={`
                   border-t border-zinc-800 transition-colors
-                  ${rowIdx % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800/30"}
+                  ${rowIdx % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800"}
                   hover:bg-indigo-500/5
                 `}
               >
                 {/* Sticky feature name cell */}
-                <td className="sticky left-0 z-10 bg-inherit px-4 py-3 text-zinc-200 font-medium whitespace-nowrap">
+                <td className="sticky left-0 z-10 bg-inherit px-4 py-3 text-zinc-200 font-medium whitespace-nowrap shadow-[2px_0_8px_rgba(0,0,0,0.5)]">
                   {feature}
                 </td>
                 {competitors.map((c) => {
