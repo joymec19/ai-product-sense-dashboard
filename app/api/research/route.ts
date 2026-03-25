@@ -47,75 +47,104 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── LLM fetch call ──────────────────────────────────────────
-    let llmResponse: Response;
-    try {
-      llmResponse = await fetch("https://api.sarvam.ai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "api-subscription-key": process.env.SARVAM_API_KEY!,
-        },
-        body: JSON.stringify({
-          model: "sarvam-m",
-          temperature: 0.2,
-          max_tokens: 16384,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            {
-              role: "user",
-              content: `Analyze the competitive landscape for this category: "${category_input.trim()}"`,
-            },
-          ],
-        }),
-      });
-    } catch (error) {
-      console.error("[LLM Network Error]", error);
-      return NextResponse.json(
-        { error: "LLM network error. Please retry in a few seconds." },
-        { status: 502 },
-      );
-    }
+    // ── LLM fetch with retry ─────────────────────────────────────
+    const MAX_ATTEMPTS = 3;
+    let rawContent: string | undefined;
 
-    if (!llmResponse.ok) {
-      const errorBody = await llmResponse.text();
-      console.error("[Sarvam Error]", llmResponse.status, errorBody);
-      return NextResponse.json(
-        { error: "LLM API call failed.", detail: errorBody },
-        { status: 502 }
-      );
-    }
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      let llmResponse: Response;
+      try {
+        llmResponse = await fetch("https://api.sarvam.ai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "api-subscription-key": process.env.SARVAM_API_KEY!,
+          },
+          body: JSON.stringify({
+            model: "sarvam-m",
+            temperature: 0.2,
+            max_tokens: 16384,
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              {
+                role: "user",
+                content: `Analyze the competitive landscape for this category: "${category_input.trim()}"`,
+              },
+            ],
+          }),
+        });
+      } catch (networkErr) {
+        console.error(`[LLM Network Error] attempt ${attempt}`, networkErr);
+        if (attempt === MAX_ATTEMPTS) {
+          return NextResponse.json(
+            { error: "LLM network error. Please retry in a few seconds." },
+            { status: 502 }
+          );
+        }
+        await new Promise((r) => setTimeout(r, attempt * 1500));
+        continue;
+      }
 
-    const llmData = await llmResponse.json();
-    const choice = llmData.choices?.[0];
-    const rawContent: string | undefined = choice?.message?.content;
+      if (!llmResponse.ok) {
+        const errorBody = await llmResponse.text();
+        console.error(`[Sarvam HTTP Error] attempt ${attempt}`, llmResponse.status, errorBody);
+        // Retry on rate-limit or server errors; give up on client errors (4xx except 429)
+        if (attempt < MAX_ATTEMPTS && (llmResponse.status === 429 || llmResponse.status >= 500)) {
+          await new Promise((r) => setTimeout(r, attempt * 1500));
+          continue;
+        }
+        return NextResponse.json(
+          { error: "LLM API call failed.", detail: errorBody },
+          { status: 502 }
+        );
+      }
+
+      const llmData = await llmResponse.json();
+      const choice = llmData.choices?.[0];
+      const content: string | undefined = choice?.message?.content;
+
+      if (!content) {
+        const finishReason = choice?.finish_reason;
+        console.error(`[Sarvam empty content] attempt ${attempt} finish_reason:`, finishReason);
+        if (attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, attempt * 1500));
+          continue;
+        }
+        return NextResponse.json(
+          { error: finishReason === "length" ? "LLM ran out of tokens. Please try again." : "Empty response from LLM." },
+          { status: 502 }
+        );
+      }
+
+      rawContent = content;
+      break;
+    }
 
     if (!rawContent) {
-      const finishReason = choice?.finish_reason;
-      console.error("[Sarvam empty content] finish_reason:", finishReason, "Full:", JSON.stringify(llmData).slice(0, 500));
-      const error = finishReason === "length"
-        ? "LLM ran out of tokens before producing output. Please try again."
-        : "Empty response from LLM.";
-      return NextResponse.json({ error }, { status: 502 });
+      return NextResponse.json({ error: "LLM did not return content after retries." }, { status: 502 });
     }
 
     // ── Parse & validate ──────────────────────────────────────────
     let parsed: unknown;
     try {
-      const text = rawContent.trim();
-      // Strip <think>...</think> reasoning blocks (closed and unclosed)
-      const noThink = text
-        .replace(/<think>[\s\S]*?<\/think>/gi, "")  // closed <think> blocks
+      // Extract the outermost JSON object, tolerating <think> blocks, code fences, and surrounding text.
+      const extractBraces = (s: string): string | null => {
+        const first = s.indexOf("{");
+        const last = s.lastIndexOf("}");
+        return first !== -1 && last > first ? s.slice(first, last + 1) : null;
+      };
+      const stripFences = (s: string) =>
+        s.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
+      const noThink = rawContent
+        .replace(/<think>[\s\S]*?<\/think>/gi, "")
         .trim();
-      // Strip markdown code fences
-      const stripped = noThink.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
-      // Extract outermost JSON object
-      const firstBrace = stripped.indexOf("{");
-      const lastBrace = stripped.lastIndexOf("}");
+      // 1. Strip think blocks + fences → extract {…}
+      // 2. Fallback: skip think stripping (handles JSON inside an unclosed <think>)
+      // 3. Last resort: hand everything to jsonrepair as-is
       const jsonString =
-        firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace
-          ? stripped.slice(firstBrace, lastBrace + 1)
-          : stripped;
+        extractBraces(stripFences(noThink)) ??
+        extractBraces(stripFences(rawContent)) ??
+        rawContent;
 
       parsed = JSON.parse(jsonrepair(jsonString));
     } catch (e) {
