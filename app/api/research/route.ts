@@ -17,7 +17,7 @@ CRITICAL INSTRUCTIONS:
 - Do NOT use markdown code fences (\`\`\`json or \`\`\`).
 - Do NOT include any text, explanation, or commentary before or after the JSON.
 
-Return a JSON object with a single key "competitors" containing an array of 6 to 10 objects. Each object must have exactly these fields:
+Return a JSON object with a single key "competitors" containing an array of exactly 5 objects. Each object must have exactly these fields:
 {
   "name": string,
   "pricing": { "model": string, "starting_price_usd": number or null, "has_free_tier": boolean },
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.error("[LLM JSON Parse Error]", e);
       console.error("[Raw content (first 1000 chars)]", rawContent.slice(0, 1000));
-      return NextResponse.json({ error: "LLM returned malformed JSON." }, { status: 502 });
+      return NextResponse.json({ error: "LLM returned malformed JSON.", rawPreview: rawContent.slice(0, 300) }, { status: 502 });
     }
 
     const validation = CompetitorArraySchema.safeParse(
