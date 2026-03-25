@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sun, Moon, Loader2 } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import QuestionnaireModal from "@/components/questionnaire/QuestionnaireModal";
+import type { Competitor } from "@/lib/schemas/competitor";
+
+type LoadingStage = "idle" | "research" | "prd";
 
 export default function Home() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [darkMode, setDarkMode] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [error, setError] = useState<string | null>(null);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [homeProductContext, setHomeProductContext] = useState<string | null>(null);
@@ -30,8 +33,12 @@ export default function Home() {
     }
 
     setError(null);
-    setLoading(true);
+    setLoadingStage("research");
 
+    let analysisId: string;
+    let competitors: Competitor[];
+
+    // ── Stage 1: Research ────────────────────────────────────────────────────
     try {
       const res = await fetch("/api/research", {
         method: "POST",
@@ -46,20 +53,45 @@ export default function Home() {
 
       if (!res.ok) {
         setError(data.error || "Something went wrong. Please try again.");
+        setLoadingStage("idle");
         return;
       }
 
-      router.push(`/analysis/${data.analysis_id}`);
+      analysisId = data.analysis_id;
+      competitors = data.competitors;
     } catch {
       setError("Network error. Please check your connection and try again.");
-    } finally {
-      setLoading(false);
+      setLoadingStage("idle");
+      return;
     }
+
+    // ── Stage 2: PRD generation (only when product context is available) ─────
+    if (homeProductContext && homeProductContext.trim().length >= 10) {
+      setLoadingStage("prd");
+      try {
+        await fetch("/api/generate-prd", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            analysis_id: analysisId,
+            competitors,
+            home_product_context: homeProductContext.trim(),
+          }),
+        });
+        // Non-blocking: if PRD generation fails, we still navigate to the analysis
+      } catch {
+        // Swallow — user can generate PRD from the analysis page
+      }
+    }
+
+    router.push(`/analysis/${analysisId}`);
   };
 
   const handleQuestionnaireSubmit = (context: string) => {
     setHomeProductContext(context);
   };
+
+  const loading = loadingStage !== "idle";
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center px-4 transition-colors">
@@ -75,16 +107,28 @@ export default function Home() {
         {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </button>
 
-      {/* Loading overlay */}
+      {/* Staged loading overlay */}
       {loading && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-zinc-900/60 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-xl dark:bg-zinc-800">
-            <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
+          <div className="flex w-80 flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-xl dark:bg-zinc-800">
             <p className="text-base font-medium text-zinc-700 dark:text-zinc-300">
-              Analyzing competitive landscape...
+              {loadingStage === "research"
+                ? "Researching competitors..."
+                : "Generating PRD sections..."}
             </p>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              This may take 15–30 seconds
+            {/* Progress bar */}
+            <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+              <div
+                key={loadingStage}
+                className={`h-full rounded-full bg-indigo-500 ${
+                  loadingStage === "research"
+                    ? "animate-progress-research"
+                    : "animate-progress-prd"
+                }`}
+              />
+            </div>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              {loadingStage === "research" ? "~15 seconds" : "~30 seconds"}
             </p>
           </div>
         </div>
@@ -143,6 +187,26 @@ export default function Home() {
           >
             {loading ? "Analyzing..." : "Analyze"}
           </button>
+        </div>
+      </div>
+
+      {/* Demo card */}
+      <div className="w-full max-w-2xl mt-8">
+        <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
+          <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+            Or explore a live demo →
+          </p>
+          <a
+            href="/analysis/ai-scheduling-demo-2026/share"
+            className="block rounded-xl border border-zinc-200 bg-white px-5 py-4 text-left transition-colors hover:border-indigo-400 hover:bg-indigo-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-indigo-500 dark:hover:bg-zinc-700/80"
+          >
+            <p className="font-semibold text-zinc-900 dark:text-white">
+              AI Scheduling Apps — Smart Scheduler context
+            </p>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              8 competitors · PRD pre-generated · Read-only
+            </p>
+          </a>
         </div>
       </div>
 

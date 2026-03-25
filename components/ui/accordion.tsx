@@ -97,10 +97,14 @@ function AccordionContent({ children, className }: AccordionContentProps) {
   const value = React.useContext(AccordionItemContext);
   const isOpen = openItems.includes(value);
 
-  if (!isOpen) return null;
-
   return (
-    <div className={cn("overflow-hidden text-sm pb-4 pt-0", className)}>
+    <div
+      className={cn(
+        "overflow-hidden text-sm pb-4 pt-0",
+        !isOpen && "hidden print:block",
+        className
+      )}
+    >
       {children}
     </div>
   );
