@@ -18,7 +18,7 @@ CRITICAL INSTRUCTIONS:
 - Do NOT use markdown code fences (\`\`\`json or \`\`\`).
 - Do NOT include any text, explanation, or commentary before or after the JSON.
 
-Return a JSON object with a single key "competitors" containing an array of 6 to 10 objects. Each object must have exactly these fields:
+Return a JSON object with a single key "competitors" containing an array of exactly 5 objects. Each object must have exactly these fields:
 {
   "name": string,
   "pricing": { "model": string, "starting_price_usd": number or null, "has_free_tier": boolean },
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             model: "sarvam-m",
             temperature: 0.2,
-            max_tokens: 16384,
+            max_tokens: 7500,
             messages: [
               { role: "system", content: SYSTEM_PROMPT },
               {
