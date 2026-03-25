@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           model: "sarvam-m",
           temperature: 0.2,
-          max_tokens: 7500,
+          max_tokens: 16384,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             {
@@ -103,10 +103,9 @@ export async function POST(req: NextRequest) {
     let parsed: unknown;
     try {
       const text = rawContent.trim();
-      // Strip <think>...</think> reasoning blocks
+      // Strip <think>...</think> reasoning blocks (closed and unclosed)
       const noThink = text
         .replace(/<think>[\s\S]*?<\/think>/gi, "")  // closed <think> blocks
-        .replace(/<think>[\s\S]*/i, "")              // unclosed <think>: strip to end of string
         .trim();
       // Strip markdown code fences
       const stripped = noThink.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
