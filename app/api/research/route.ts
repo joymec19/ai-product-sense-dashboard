@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { jsonrepair } from "jsonrepair";
 import { CompetitorArraySchema, type Competitor } from "@/lib/schemas/competitor";
 
 function getSupabase() {
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
           ? stripped.slice(firstBrace, lastBrace + 1)
           : stripped;
 
-      parsed = JSON.parse(jsonString);
+      parsed = JSON.parse(jsonrepair(jsonString));
     } catch (e) {
       console.error("[LLM JSON Parse Error]", e);
       console.error("[Raw content (first 1000 chars)]", rawContent.slice(0, 1000));
