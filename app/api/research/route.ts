@@ -47,6 +47,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!process.env.SARVAM_API_KEY) {
+      console.error("[Config Error] SARVAM_API_KEY is not set");
+      return NextResponse.json(
+        { error: "Server configuration error: SARVAM_API_KEY is missing. Add it to your Vercel environment variables." },
+        { status: 500 }
+      );
+    }
+
     // ── LLM fetch with retry ─────────────────────────────────────
     const MAX_ATTEMPTS = 3;
     let rawContent: string | undefined;
