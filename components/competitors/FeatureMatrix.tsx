@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
 import type { CompetitorData, SupportStatus } from "@/lib/types/dashboard";
 
 interface FeatureMatrixProps {
@@ -9,41 +10,27 @@ interface FeatureMatrixProps {
   competitors: CompetitorData[];
 }
 
-// ── Badge config per status ──────────────────────────────────────────────────
-const STATUS_CONFIG: Record<
-  SupportStatus,
-  { icon: string; label: string; className: string }
-> = {
-  full: {
-    icon: "✓",
-    label: "Supported",
-    className: "text-emerald-400 bg-emerald-400/10",
-  },
-  partial: {
-    icon: "~",
-    label: "Partial",
-    className: "text-yellow-400 bg-yellow-400/10",
-  },
-  none: {
-    icon: "✗",
-    label: "Not supported",
-    className: "text-red-400 bg-red-400/10",
-  },
+type SortDir = "asc" | "desc";
+
+type BadgeVariant = "success" | "warning" | "destructive";
+
+const STATUS_VARIANT: Record<SupportStatus, BadgeVariant> = {
+  full: "success",
+  partial: "warning",
+  none: "destructive",
 };
 
-function StatusBadge({ status }: { status: SupportStatus }) {
-  const cfg = STATUS_CONFIG[status];
-  return (
-    <span
-      title={cfg.label}
-      className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${cfg.className}`}
-    >
-      {cfg.icon}
-    </span>
-  );
-}
+const STATUS_LABEL: Record<SupportStatus, string> = {
+  full: "✓",
+  partial: "~",
+  none: "✗",
+};
 
-type SortDir = "asc" | "desc";
+const STATUS_TITLE: Record<SupportStatus, string> = {
+  full: "Supported",
+  partial: "Partial",
+  none: "Not supported",
+};
 
 export default function FeatureMatrix({ features, competitors }: FeatureMatrixProps) {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -81,16 +68,10 @@ export default function FeatureMatrix({ features, competitors }: FeatureMatrixPr
         <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-widest">
           Feature Matrix — P1
         </h2>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-          <span className={`${STATUS_CONFIG.full.className} px-2 py-0.5 rounded-full`}>
-            ✓ Full
-          </span>
-          <span className={`${STATUS_CONFIG.partial.className} px-2 py-0.5 rounded-full`}>
-            ~ Partial
-          </span>
-          <span className={`${STATUS_CONFIG.none.className} px-2 py-0.5 rounded-full`}>
-            ✗ None
-          </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="success">✓ Full</Badge>
+          <Badge variant="warning">~ Partial</Badge>
+          <Badge variant="destructive">✗ None</Badge>
         </div>
       </div>
 
@@ -117,9 +98,9 @@ export default function FeatureMatrix({ features, competitors }: FeatureMatrixPr
                 >
                   <div className="flex flex-col items-center gap-1">
                     <span>{c.name}</span>
-                    <span className="text-xs text-indigo-400 font-normal">
+                    <Badge variant="indigo" className="font-normal">
                       {coverageMap[c.name]}% covered
-                    </span>
+                    </Badge>
                   </div>
                 </th>
               ))}
@@ -129,11 +110,9 @@ export default function FeatureMatrix({ features, competitors }: FeatureMatrixPr
             {sortedFeatures.map((feature, rowIdx) => (
               <tr
                 key={feature}
-                className={`
-                  border-t border-zinc-800 transition-colors
-                  ${rowIdx % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800/30"}
-                  hover:bg-indigo-500/5
-                `}
+                className={`border-t border-zinc-800 transition-colors hover:bg-indigo-500/5 ${
+                  rowIdx % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800/30"
+                }`}
               >
                 {/* Sticky feature name cell */}
                 <td className="sticky left-0 z-10 bg-inherit px-4 py-3 text-zinc-200 font-medium whitespace-nowrap">
@@ -143,7 +122,13 @@ export default function FeatureMatrix({ features, competitors }: FeatureMatrixPr
                   const status: SupportStatus = c.featureSupport[feature] ?? "none";
                   return (
                     <td key={c.name} className="px-4 py-3 text-center">
-                      <StatusBadge status={status} />
+                      <Badge
+                        variant={STATUS_VARIANT[status]}
+                        title={STATUS_TITLE[status]}
+                        className="w-7 h-7 inline-flex items-center justify-center rounded-full font-bold"
+                      >
+                        {STATUS_LABEL[status]}
+                      </Badge>
                     </td>
                   );
                 })}

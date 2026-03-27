@@ -1,30 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sun, Moon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import QuestionnaireModal from "@/components/questionnaire/QuestionnaireModal";
 import type { Competitor } from "@/lib/schemas/competitor";
 
 type LoadingStage = "idle" | "research" | "prd";
 
+const PROGRESS_VALUES: Record<LoadingStage, number> = {
+  idle: 0,
+  research: 45,
+  prd: 85,
+};
+
 export default function Home() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [darkMode, setDarkMode] = useState(true);
   const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [error, setError] = useState<string | null>(null);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [homeProductContext, setHomeProductContext] = useState<string | null>(null);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-  }, [darkMode]);
 
   const handleAnalyze = async () => {
     if (!query.trim() || query.trim().length < 2) {
@@ -94,40 +93,30 @@ export default function Home() {
   const loading = loadingStage !== "idle";
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center px-4 transition-colors">
+    <div className="relative flex min-h-screen flex-col items-center justify-center px-4">
       {/* Background */}
-      <div className="fixed inset-0 -z-10 bg-zinc-100 transition-colors dark:bg-zinc-900" />
+      <div className="fixed inset-0 -z-10 bg-zinc-950" />
+      {/* Subtle dot grid */}
+      <div
+        className="fixed inset-0 -z-10 opacity-20"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, #52525b 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
 
-      {/* Dark/Light mode toggle */}
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        className="fixed right-4 top-4 z-50 rounded-full bg-zinc-200 p-2.5 text-zinc-600 transition-colors hover:bg-zinc-300 hover:text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
-        aria-label="Toggle dark mode"
-      >
-        {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-      </button>
-
-      {/* Staged loading overlay */}
+      {/* Loading overlay */}
       {loading && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-zinc-900/60 backdrop-blur-sm">
-          <div className="flex w-80 flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-xl dark:bg-zinc-800">
-            <p className="text-base font-medium text-zinc-700 dark:text-zinc-300">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm">
+          <div className="flex w-80 flex-col items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
+            <p className="text-sm font-medium text-zinc-200">
               {loadingStage === "research"
                 ? "Researching competitors..."
                 : "Generating PRD sections..."}
             </p>
-            {/* Progress bar */}
-            <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
-              <div
-                key={loadingStage}
-                className={`h-full rounded-full bg-indigo-500 ${
-                  loadingStage === "research"
-                    ? "animate-progress-research"
-                    : "animate-progress-prd"
-                }`}
-              />
-            </div>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            <Progress value={PROGRESS_VALUES[loadingStage]} className="w-full" />
+            <p className="text-xs text-zinc-500">
               {loadingStage === "research" ? "~15 seconds" : "~30 seconds"}
             </p>
           </div>
@@ -137,16 +126,16 @@ export default function Home() {
       {/* Main content */}
       <div className="w-full max-w-2xl space-y-8 text-center">
         <div className="space-y-3">
-          <h1 className="text-4xl font-bold tracking-tight text-zinc-900 transition-colors dark:text-white">
+          <h1 className="text-4xl font-bold tracking-tight text-white">
             AI Product Sense
           </h1>
-          <p className="text-zinc-500 transition-colors dark:text-zinc-400">
+          <p className="text-zinc-400">
             Competitive analysis and PRD generation, powered by AI
           </p>
         </div>
 
         <div className="space-y-4">
-          <input
+          <Input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -154,56 +143,56 @@ export default function Home() {
               if (e.key === "Enter" && !loading) handleAnalyze();
             }}
             placeholder="Describe your product category (e.g. AI scheduling apps for knowledge workers)"
-            className="w-full rounded-xl border border-zinc-300 bg-white px-5 py-4 text-base text-zinc-900 placeholder-zinc-500 outline-none ring-indigo-500 transition-all focus:border-indigo-500 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
             disabled={loading}
+            className="w-full rounded-xl border-zinc-700 bg-zinc-900 px-5 py-4 text-base text-zinc-100 placeholder-zinc-500 focus:border-indigo-500 focus:ring-indigo-500/30"
           />
 
-          {/* "I don't have a PRD" toggle */}
+          {/* Product context toggle + badge */}
           <div className="flex items-center justify-center gap-3">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowQuestionnaire(true)}
-              className="text-sm text-indigo-500 underline-offset-2 transition-colors hover:text-indigo-400 hover:underline"
               disabled={loading}
+              className="text-sm text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10"
             >
               I don&apos;t have a PRD
-            </button>
+            </Button>
             {homeProductContext && (
-              <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-500">
-                Product context added
-              </span>
+              <Badge variant="indigo">Product context added</Badge>
             )}
           </div>
 
           {error && (
-            <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+            <div className="rounded-lg border border-red-800 bg-red-900/20 px-4 py-3 text-sm text-red-400">
               {error}
             </div>
           )}
 
-          <button
+          <Button
             onClick={handleAnalyze}
             disabled={loading}
-            className="w-full rounded-xl bg-indigo-500 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900"
+            className="w-full rounded-xl bg-indigo-500 py-3.5 text-base font-semibold text-white hover:bg-indigo-400 focus:ring-indigo-500 focus:ring-offset-zinc-950 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Analyzing..." : "Analyze"}
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Demo card */}
       <div className="w-full max-w-2xl mt-8">
-        <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
-          <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="border-t border-zinc-800 pt-6">
+          <p className="mb-3 text-sm text-zinc-500">
             Or explore a live demo →
           </p>
           <a
             href="/analysis/ai-scheduling-demo-2026/share"
-            className="block rounded-xl border border-zinc-200 bg-white px-5 py-4 text-left transition-colors hover:border-indigo-400 hover:bg-indigo-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-indigo-500 dark:hover:bg-zinc-700/80"
+            className="block rounded-xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-left transition-colors hover:border-indigo-500 hover:bg-zinc-800/60"
           >
-            <p className="font-semibold text-zinc-900 dark:text-white">
+            <p className="font-semibold text-zinc-100">
               AI Scheduling Apps — Smart Scheduler context
             </p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-sm text-zinc-500">
               8 competitors · PRD pre-generated · Read-only
             </p>
           </a>

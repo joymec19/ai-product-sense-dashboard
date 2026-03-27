@@ -144,8 +144,20 @@ export default function PricingChart({ competitors }: PricingChartProps) {
             <LabelList
               dataKey="hasFree"
               position="right"
-              formatter={(v: unknown) => (v ? "✓ Free" : "")}
-              style={{ fill: "#34d399", fontSize: 10 }}
+              content={({ value, x, y, width, height }: { value?: unknown; x?: string | number; y?: string | number; width?: string | number; height?: string | number }) => {
+                if (!value) return null;
+                return (
+                  <text
+                    x={Number(x ?? 0) + Number(width ?? 0) + 6}
+                    y={Number(y ?? 0) + Number(height ?? 0) / 2}
+                    dominantBaseline="central"
+                    fill="#34d399"
+                    fontSize={10}
+                  >
+                    ✓ Free
+                  </text>
+                );
+              }}
             />
           </Bar>
           {/* Paid tier starting price */}
@@ -159,8 +171,20 @@ export default function PricingChart({ competitors }: PricingChartProps) {
             <LabelList
               dataKey="Paid ($/mo)"
               position="right"
-              formatter={(v: unknown) => (Number(v) > 0 ? `$${v}` : "N/A")}
-              style={{ fill: "#a5b4fc", fontSize: 10 }}
+              content={({ value, x, y, width, height }: { value?: unknown; x?: string | number; y?: string | number; width?: string | number; height?: string | number }) => {
+                const label = Number(value) > 0 ? `$${value}` : "N/A";
+                return (
+                  <text
+                    x={Number(x ?? 0) + Number(width ?? 0) + 6}
+                    y={Number(y ?? 0) + Number(height ?? 0) / 2}
+                    dominantBaseline="central"
+                    fill="#a5b4fc"
+                    fontSize={10}
+                  >
+                    {label}
+                  </text>
+                );
+              }}
             />
           </Bar>
         </BarChart>

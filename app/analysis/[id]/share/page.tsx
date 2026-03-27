@@ -39,20 +39,20 @@ function SharePageContent({
   analysisHref: string;
 }) {
   return (
-    <main className="min-h-screen bg-white px-4 py-10 text-zinc-900">
+    <main className="min-h-screen bg-zinc-950 px-4 py-10 text-zinc-100">
       <div className="mx-auto max-w-3xl space-y-10">
         {/* Header */}
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
+          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
             Product Analysis — Read Only
           </p>
-          <h1 className="mt-1 text-3xl font-bold">{category}</h1>
+          <h1 className="mt-1 text-3xl font-bold text-white">{category}</h1>
         </div>
 
         {/* Radar Chart */}
         {competitors.length > 0 && (
           <section>
-            <h2 className="mb-4 text-xl font-semibold">Competitive Radar</h2>
+            <h2 className="mb-4 text-xl font-semibold text-zinc-100">Competitive Radar</h2>
             <RadarChart competitors={competitors} />
           </section>
         )}
@@ -60,7 +60,7 @@ function SharePageContent({
         {/* Feature Matrix */}
         {competitors.length > 0 && (
           <section>
-            <h2 className="mb-4 text-xl font-semibold">Feature Matrix</h2>
+            <h2 className="mb-4 text-xl font-semibold text-zinc-100">Feature Matrix</h2>
             <FeatureMatrix features={allFeatures} competitors={competitors} />
           </section>
         )}
@@ -68,20 +68,20 @@ function SharePageContent({
         {/* PRD Summary */}
         {prd ? (
           <section className="space-y-6">
-            <h2 className="text-xl font-semibold">PRD Summary</h2>
+            <h2 className="text-xl font-semibold text-zinc-100">PRD Summary</h2>
 
             <div>
               <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-500">
                 Objective
               </h3>
-              <p className="text-zinc-700">{prd.objective}</p>
+              <p className="text-zinc-300">{prd.objective}</p>
             </div>
 
             <div>
               <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-500">
                 Problem
               </h3>
-              <p className="text-zinc-700">{prd.problem_statement}</p>
+              <p className="text-zinc-300">{prd.problem_statement}</p>
             </div>
 
             <div>
@@ -90,9 +90,9 @@ function SharePageContent({
               </h3>
               <ul className="space-y-3">
                 {prd.features.p1.slice(0, 3).map((f) => (
-                  <li key={f.id} className="rounded-lg border border-zinc-200 p-4">
-                    <p className="font-semibold text-zinc-800">{f.title}</p>
-                    <p className="mt-1 text-sm text-zinc-600">{f.description}</p>
+                  <li key={f.id} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                    <p className="font-semibold text-zinc-100">{f.title}</p>
+                    <p className="mt-1 text-sm text-zinc-400">{f.description}</p>
                   </li>
                 ))}
               </ul>
@@ -100,15 +100,15 @@ function SharePageContent({
           </section>
         ) : (
           <section>
-            <p className="text-zinc-400 italic">No PRD generated yet for this analysis.</p>
+            <p className="text-zinc-500 italic">No PRD generated yet for this analysis.</p>
           </section>
         )}
 
         {/* View Full Analysis link */}
-        <div className="border-t border-zinc-200 pt-6">
+        <div className="border-t border-zinc-800 pt-6">
           <a
             href={analysisHref}
-            className="inline-flex items-center gap-1 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
+            className="inline-flex items-center gap-1 rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-400 transition-colors"
           >
             View Full Analysis →
           </a>
@@ -145,7 +145,7 @@ export default async function SharePage({ params }: PageProps) {
 
   if (analysisErr || !analysis) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-white">
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950">
         <p className="text-zinc-500">Analysis not found or link is invalid.</p>
       </main>
     );

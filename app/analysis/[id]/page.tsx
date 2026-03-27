@@ -6,13 +6,14 @@ import { useState, useEffect } from "react";
 import PRDEditor from "@/components/prd/PRDEditor";
 import { ToastProvider, useToast } from "@/components/ui/toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button, buttonVariants } from "@/components/ui/button";
 import RadarChart from "@/components/charts/RadarChart";
 import PricingChart from "@/components/charts/PricingChart";
 import FeatureMatrix from "@/components/competitors/FeatureMatrix";
 import CompetitorCard from "@/components/competitors/CompetitorCard";
 import { supabase } from "@/lib/supabase";
 import type { CompetitorData } from "@/lib/types/dashboard";
-import { Share2, Eye, EyeOff } from "lucide-react";
+import { Share2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 const BOTTOM_NAV_SECTIONS = ["Overview", "Competitors", "PRD", "GTM"] as const;
 
@@ -22,8 +23,6 @@ function AnalysisPageContent() {
   const [interviewerMode, setInterviewerMode] = useState(false);
   const [competitors, setCompetitors] = useState<CompetitorData[]>([]);
   const [visible, setVisible] = useState(false);
-  // Mobile top-level tab: "prd" | "dashboard"
-  const [mobileTab, setMobileTab] = useState<"prd" | "dashboard">("prd");
 
   // Hydrate from localStorage on mount + trigger fade-in
   useEffect(() => {
@@ -79,21 +78,22 @@ function AnalysisPageContent() {
     new Set(competitors.flatMap((c) => Object.keys(c.featureSupport ?? {})))
   );
 
-  // ── PRD panel (left) ────────────────────────────────────────────────────────
+  // ── PRD panel content ───────────────────────────────────────────────────────
   const prdPanel = (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+        <h1 className="text-xl font-bold tracking-tight text-white">
           PRD Editor
         </h1>
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Interviewer Mode toggle */}
-          <button
+        <div className="flex flex-wrap items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={toggleInterviewerMode}
-            className={`flex items-center gap-1.5 text-sm transition-colors ${
+            className={`flex items-center gap-1.5 text-sm ${
               interviewerMode
-                ? "text-indigo-500 hover:text-indigo-400"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
             title={interviewerMode ? "Interviewer Mode ON" : "Interviewer Mode OFF"}
           >
@@ -103,43 +103,43 @@ function AnalysisPageContent() {
               <EyeOff className="h-4 w-4" />
             )}
             Interviewer Mode
-          </button>
+          </Button>
 
-          {/* Share */}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleShare}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-200"
             title="Copy share link"
           >
             <Share2 className="h-4 w-4" />
             Share
-          </button>
+          </Button>
 
           <a
             href="/"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className={buttonVariants({ variant: "ghost", size: "sm", className: "text-sm text-zinc-400 hover:text-zinc-200" })}
           >
-            ← Back
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back
           </a>
         </div>
       </div>
 
-      {/* Overview anchor */}
       <div id="overview" />
       <PRDEditor analysisId={params.id} interviewerMode={interviewerMode} />
     </div>
   );
 
-  // ── Dashboard panel (right) ─────────────────────────────────────────────────
+  // ── Dashboard panel content ─────────────────────────────────────────────────
   const dashboardPanel = (
     <Tabs defaultValue="competitors">
-      <TabsList className="mb-2">
+      <TabsList className="mb-4">
         <TabsTrigger value="competitors">Competitors</TabsTrigger>
         <TabsTrigger value="charts">Charts</TabsTrigger>
         <TabsTrigger value="market">Market</TabsTrigger>
       </TabsList>
 
-      {/* Tab 1: Competitor cards grid */}
       <TabsContent value="competitors">
         {competitors.length === 0 ? (
           <div className="flex items-center justify-center h-48 text-sm text-zinc-500">
@@ -154,7 +154,6 @@ function AnalysisPageContent() {
         )}
       </TabsContent>
 
-      {/* Tab 2: Stacked charts */}
       <TabsContent value="charts">
         <div className="space-y-6">
           <RadarChart competitors={competitors} />
@@ -163,7 +162,6 @@ function AnalysisPageContent() {
         </div>
       </TabsContent>
 
-      {/* Tab 3: Market sizing placeholder */}
       <TabsContent value="market">
         <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-8 flex items-center justify-center min-h-[200px]">
           <p className="text-sm text-zinc-500 italic">TAM/SAM/SOM — Coming in V1.1</p>
@@ -174,59 +172,41 @@ function AnalysisPageContent() {
 
   return (
     <div
-      className={`bg-zinc-100 dark:bg-zinc-950 min-h-screen transition-opacity duration-300 ${
+      className={`bg-zinc-950 min-h-screen transition-opacity duration-300 ${
         visible ? "opacity-100" : "opacity-0"
       } ${interviewerMode ? "pb-12" : ""}`}
     >
 
-      {/* ── Mobile tab switcher (hidden on md+) ─────────────────────────────── */}
-      <div className="md:hidden sticky top-0 z-30 bg-zinc-900 border-b border-zinc-800 px-4 py-2 flex gap-2">
-        <button
-          onClick={() => setMobileTab("prd")}
-          className={`flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors ${
-            mobileTab === "prd"
-              ? "bg-zinc-700 text-white"
-              : "text-zinc-400 hover:text-zinc-200"
-          }`}
-        >
-          PRD
-        </button>
-        <button
-          onClick={() => setMobileTab("dashboard")}
-          className={`flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors ${
-            mobileTab === "dashboard"
-              ? "bg-zinc-700 text-white"
-              : "text-zinc-400 hover:text-zinc-200"
-          }`}
-        >
-          Dashboard
-        </button>
-      </div>
+      {/* ── Mobile view (hidden on md+) — Tabs control which panel is shown ─── */}
+      <div className="md:hidden">
+        <Tabs defaultValue="prd" className="w-full">
+          {/* Sticky tab switcher bar */}
+          <div className="sticky top-0 z-30 bg-zinc-950 border-b border-zinc-800 px-4 py-2">
+            <TabsList className="w-full">
+              <TabsTrigger value="prd" className="flex-1">PRD</TabsTrigger>
+              <TabsTrigger value="dashboard" className="flex-1">Dashboard</TabsTrigger>
+            </TabsList>
+          </div>
 
-      {/* ── Mobile: single-column, tab-controlled (<768px) ──────────────────── */}
-      <div className="md:hidden p-4">
-        {mobileTab === "prd" ? (
-          <div id="prd" data-panel="left">
-            {prdPanel}
-          </div>
-        ) : (
-          <div id="competitors" data-panel="right">
-            {dashboardPanel}
-          </div>
-        )}
+          <TabsContent value="prd">
+            <div className="p-4" id="prd" data-panel="left">
+              {prdPanel}
+            </div>
+          </TabsContent>
+          <TabsContent value="dashboard">
+            <div className="p-4" id="competitors" data-panel="right">
+              {dashboardPanel}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* ── Tablet + Desktop: split panels (≥768px) ─────────────────────────── */}
-      {/*
-        Tablet (768–1023px): 50/50 split
-        Desktop (≥1024px):   40/60 split
-        Both panels scroll independently (h-screen overflow-y-auto)
-      */}
       <div className="hidden md:flex h-screen overflow-hidden">
         {/* Left: PRD Editor — 50% tablet, 40% desktop */}
         <div
           id="prd"
-          className="w-1/2 lg:w-[40%] h-full overflow-y-auto border-r border-border p-6"
+          className="w-1/2 lg:w-[40%] h-full overflow-y-auto border-r border-zinc-800 p-6"
           data-panel="left"
         >
           {prdPanel}
@@ -242,20 +222,22 @@ function AnalysisPageContent() {
         </div>
       </div>
 
-      {/* GTM anchor (bottom of page) */}
+      {/* GTM anchor */}
       <div id="gtm" />
 
       {/* Bottom nav — Interviewer Mode only */}
       {interviewerMode && (
-        <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-8 border-t border-border bg-background py-3">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-8 border-t border-zinc-800 bg-zinc-950 py-3">
           {BOTTOM_NAV_SECTIONS.map((section) => (
-            <button
+            <Button
               key={section}
+              variant="ghost"
+              size="sm"
               onClick={() => scrollToSection(section)}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-zinc-400 hover:text-zinc-100"
             >
               {section}
-            </button>
+            </Button>
           ))}
         </nav>
       )}

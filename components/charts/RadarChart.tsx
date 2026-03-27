@@ -128,11 +128,11 @@ export default function RadarChart({ competitors, homeProduct }: RadarChartProps
             iconSize={8}
             formatter={(value: string) => (
               <span
-                style={{
-                  color: value === homeProduct ? "#6366f1" : "#a1a1aa",
-                  fontWeight: value === homeProduct ? 700 : 400,
-                  fontSize: 12,
-                }}
+                className={
+                  value === homeProduct
+                    ? "text-xs font-bold text-indigo-400"
+                    : "text-xs font-normal text-zinc-400"
+                }
               >
                 {value === homeProduct ? `${value} (You)` : value}
               </span>
