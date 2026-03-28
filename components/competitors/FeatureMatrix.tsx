@@ -61,7 +61,7 @@ export default function FeatureMatrix({ features, competitors }: FeatureMatrixPr
     return Object.fromEntries(
       competitors.map((c) => {
         const total = features.length;
-        const full = features.filter((f) => c.featureSupport[f] === "full").length;
+        const full = features.filter((f) => c.featureSupport?.[f] === "full").length;
         return [c.name, total > 0 ? Math.round((full / total) * 100) : 0];
       })
     );
@@ -140,7 +140,7 @@ export default function FeatureMatrix({ features, competitors }: FeatureMatrixPr
                   {feature}
                 </td>
                 {competitors.map((c) => {
-                  const status: SupportStatus = c.featureSupport[feature] ?? "none";
+                  const status: SupportStatus = c.featureSupport?.[feature] ?? "none";
                   return (
                     <td key={c.name} className="px-4 py-3 text-center">
                       <StatusBadge status={status} />

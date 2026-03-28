@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import RadarChart from "@/components/charts/RadarChart";
 import FeatureMatrix from "@/components/competitors/FeatureMatrix";
 import type { Competitor } from "@/lib/schemas/competitor";
-import type { PRDDocument } from "@/lib/schemas/prd";
+import type { PRDDocument } from "@/lib/types/dashboard";
 import type { CompetitorData, SupportStatus } from "@/lib/types/dashboard";
 import {
   DEMO_SHARE_TOKEN,
@@ -89,8 +89,8 @@ function SharePageContent({
                 P1 Features (Must Have)
               </h3>
               <ul className="space-y-3">
-                {prd.features.p1.slice(0, 3).map((f) => (
-                  <li key={f.id} className="rounded-lg border border-zinc-200 p-4">
+                {prd.features.p1.slice(0, 3).map((f, i) => (
+                  <li key={i} className="rounded-lg border border-zinc-200 p-4">
                     <p className="font-semibold text-zinc-800">{f.title}</p>
                     <p className="mt-1 text-sm text-zinc-600">{f.description}</p>
                   </li>
@@ -165,13 +165,11 @@ export default async function SharePage({ params }: PageProps) {
   const competitors: CompetitorData[] = rawCompetitors.map((c) => ({
     name: c.name,
     pricing: c.pricing,
-    scores: {
-      ai_sophistication: c.scores.innovation ?? 0,
-      pricing_value: c.scores.value_for_money ?? 0,
-      mobile_ux: c.scores.ease_of_use ?? 0,
-      integrations: c.scores.product_depth ?? 0,
-      learning_curve: c.scores.ease_of_use ?? 0,
-    },
+    scores: c.scores,
+    ai_sophistication: c.ai_sophistication,
+    ux_score: c.ux_score,
+    mobile_score: c.mobile_score,
+    integration_count: c.integration_count,
     featureSupport: Object.fromEntries(
       c.features.map((f) => [f, "full" as SupportStatus])
     ),
@@ -194,6 +192,9 @@ export default async function SharePage({ params }: PageProps) {
 
     if (prdDoc) {
       prd = {
+        id: prdDoc.id,
+        analysis_id: prdDoc.analysis_id,
+        version: prdDoc.version ?? 1,
         objective: prdDoc.objective,
         problem_statement: prdDoc.problem_statement,
         solution_narrative: prdDoc.solution_narrative,

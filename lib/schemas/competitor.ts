@@ -20,6 +20,13 @@ const ScoresSchema = z.object({
   innovation: z.number().min(1).max(10),
 });
 
+const MoatScoresSchema = z.object({
+  switching_costs: z.number(),
+  network_effects: z.number(),
+  data_advantages: z.number(),
+  brand: z.number(),
+});
+
 export const CompetitorSchema = z.object({
   name: z.string(),
   pricing: PricingSchema,
@@ -30,6 +37,17 @@ export const CompetitorSchema = z.object({
   weaknesses: z.array(z.string()),
   gaps: z.array(z.string()),
   scores: ScoresSchema,
+  // New fields
+  logo_url: z.string().optional(),
+  founded: z.number().int().optional(),
+  website: z.string().optional(),
+  target_segment: z.string().optional(),
+  ai_sophistication: z.number().min(1).max(10).optional(),
+  ux_score: z.number().min(1).max(10).optional(),
+  mobile_score: z.number().min(1).max(10).optional(),
+  integration_count: z.number().int().nonnegative().optional(),
+  review_summary: z.string().optional(),
+  moat_scores: MoatScoresSchema.optional(),
 });
 
 export const CompetitorArraySchema = z.array(CompetitorSchema).min(1);

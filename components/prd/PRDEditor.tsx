@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import type { PRDDocument } from "@/lib/schemas/prd";
+import type { PRDDocument } from "@/lib/types/dashboard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -96,6 +96,9 @@ export default function PRDEditor({ analysisId, interviewerMode = false }: PRDEd
       if (existingPrd) {
         setPrdId(existingPrd.id);
         setPrd({
+          id: existingPrd.id,
+          analysis_id: existingPrd.analysis_id,
+          version: existingPrd.version ?? 1,
           objective: existingPrd.objective,
           problem_statement: existingPrd.problem_statement,
           solution_narrative: existingPrd.solution_narrative,
@@ -398,7 +401,7 @@ export default function PRDEditor({ analysisId, interviewerMode = false }: PRDEd
             {interviewerMode ? (
               <ul className="space-y-2 text-sm text-foreground">
                 {prd.features.p1.map((f) => (
-                  <li key={f.id}><span className="font-medium">{f.title}</span> — {f.description}</li>
+                  <li key={f.title}><span className="font-medium">{f.title}</span> — {f.description}</li>
                 ))}
               </ul>
             ) : (
@@ -438,7 +441,7 @@ export default function PRDEditor({ analysisId, interviewerMode = false }: PRDEd
             {interviewerMode ? (
               <ul className="space-y-2 text-sm text-foreground">
                 {prd.features.p2.map((f) => (
-                  <li key={f.id}><span className="font-medium">{f.title}</span> — {f.description}</li>
+                  <li key={f.title}><span className="font-medium">{f.title}</span> — {f.description}</li>
                 ))}
               </ul>
             ) : (
@@ -478,7 +481,7 @@ export default function PRDEditor({ analysisId, interviewerMode = false }: PRDEd
             {interviewerMode ? (
               <ul className="space-y-2 text-sm text-foreground">
                 {prd.features.p3.map((f) => (
-                  <li key={f.id}><span className="font-medium">{f.title}</span> — {f.description}</li>
+                  <li key={f.title}><span className="font-medium">{f.title}</span> — {f.description}</li>
                 ))}
               </ul>
             ) : (
@@ -518,7 +521,7 @@ export default function PRDEditor({ analysisId, interviewerMode = false }: PRDEd
             {interviewerMode ? (
               <ul className="space-y-1 text-sm text-foreground">
                 {prd.success_metrics.map((m, i) => (
-                  <li key={i}><span className="font-medium">{m.metric}</span>: {m.target}</li>
+                  <li key={i}><span className="font-medium">{m.name}</span>: {m.target}</li>
                 ))}
               </ul>
             ) : (
@@ -558,7 +561,7 @@ export default function PRDEditor({ analysisId, interviewerMode = false }: PRDEd
             {interviewerMode ? (
               <ul className="space-y-1 text-sm text-foreground">
                 {prd.risks.map((r, i) => (
-                  <li key={i}><span className="font-medium">{r.risk}</span> ({r.likelihood} likelihood)</li>
+                  <li key={i}><span className="font-medium">{r.description}</span> (likelihood: {r.likelihood})</li>
                 ))}
               </ul>
             ) : (
@@ -596,7 +599,7 @@ export default function PRDEditor({ analysisId, interviewerMode = false }: PRDEd
           </AccordionTrigger>
           <AccordionContent>
             {interviewerMode ? (
-              <p className="text-sm text-foreground leading-relaxed">{prd.gtm.positioning_statement}</p>
+              <p className="text-sm text-foreground leading-relaxed">{prd.gtm.positioning}</p>
             ) : (
               <Textarea
                 value={JSON.stringify(prd.gtm, null, 2)}

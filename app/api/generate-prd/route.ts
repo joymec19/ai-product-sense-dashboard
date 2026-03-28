@@ -1,7 +1,7 @@
 // app/api/generate-prd/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { PRDSchema, type PRDDocument } from "@/lib/schemas/prd";
+import { PRDSchema, type PRDContent } from "@/lib/schemas/prd";
 import type { Competitor } from "@/lib/schemas/competitor";
 
 function getSupabase() {
@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const prd: PRDDocument = validation.data;
+    const prd: PRDContent = validation.data;
 
     // ── Persist to Supabase ─────────────────────────────────────────────────
     const supabase = getSupabase();

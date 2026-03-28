@@ -57,6 +57,7 @@ const GTMSchema = z.object({
   launch_phases: z.array(LaunchPhaseSchema),
 });
 
+/** Validated shape returned from the LLM — use PRDDocument from lib/types/dashboard for the full DB-backed type */
 export const PRDSchema = z.object({
   objective: z.string(),
   problem_statement: z.string(),
@@ -68,4 +69,4 @@ export const PRDSchema = z.object({
   gtm: GTMSchema,
 });
 
-export type PRDDocument = z.infer<typeof PRDSchema>;
+export type PRDContent = z.infer<typeof PRDSchema>;
