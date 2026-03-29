@@ -25,13 +25,13 @@ const DEFAULT_COLORS = [
   "#4ade80", // green-400
 ];
 
-const AXES = [
-  { key: "ai_sophistication", label: "AI Sophistication" },
-  { key: "pricing_value", label: "Pricing Value" },
-  { key: "mobile_ux", label: "Mobile UX" },
-  { key: "integrations", label: "Integrations" },
-  { key: "learning_curve", label: "Learning Curve" },
-] as const;
+const AXES: Array<{ label: string; get: (c: CompetitorData) => number }> = [
+  { label: "AI Sophistication", get: (c) => c.ai_sophistication ?? 0 },
+  { label: "UX Score",          get: (c) => c.ux_score ?? 0 },
+  { label: "Mobile Score",      get: (c) => c.mobile_score ?? 0 },
+  { label: "Market Presence",   get: (c) => c.scores?.market_presence ?? 0 },
+  { label: "Value for Money",   get: (c) => c.scores?.value_for_money ?? 0 },
+];
 
 interface RadarChartProps {
   competitors: CompetitorData[];
@@ -40,10 +40,10 @@ interface RadarChartProps {
 
 // Recharts needs data shaped as [{ axis: "AI Sophistication", CompA: 7, CompB: 5 }]
 function buildChartData(competitors: CompetitorData[]) {
-  return AXES.map(({ key, label }) => {
+  return AXES.map(({ label, get }) => {
     const entry: Record<string, string | number> = { axis: label };
     competitors.forEach((c) => {
-      entry[c.name] = c.scores[key] ?? 0;
+      entry[c.name] = get(c);
     });
     return entry;
   });

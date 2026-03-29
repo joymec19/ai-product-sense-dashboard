@@ -2,58 +2,173 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sun, Moon } from "lucide-react";
-import QuestionnaireModal from "@/components/questionnaire/QuestionnaireModal";
+import { Sun, Moon, ChevronDown } from "lucide-react";
+import CategoryInput from "@/components/configure/CategoryInput";
+import ProductContext from "@/components/configure/ProductContext";
+import AnalysisSettings from "@/components/configure/AnalysisSettings";
+import LaunchPanel from "@/components/configure/LaunchPanel";
+import AnalysisProgress from "@/components/configure/AnalysisProgress";
+import type { AnalysisConfig } from "@/lib/types/dashboard";
 import type { Competitor } from "@/lib/schemas/competitor";
 
-type LoadingStage = "idle" | "research" | "prd";
+type LoadingStage = "idle" | "research" | "analysis" | "prd";
+
+type ConfigState = AnalysisConfig & {
+  currentStep: 1 | 2 | 3 | 4;
+  loadingStage: LoadingStage;
+};
+
+const INITIAL_STATE: ConfigState = {
+  category: "",
+  disambiguated: "",
+  productContext: { type: "questionnaire", content: "" },
+  geography: [],
+  segment: [],
+  customCompetitors: [],
+  currentStep: 1,
+  loadingStage: "idle",
+};
+
+const STEP_TITLES = [
+  "What are you analyzing?",
+  "Tell us about your product",
+  "Customize your analysis",
+  "Review & Launch",
+] as const;
+
+interface StepPanelProps {
+  stepNumber: 1 | 2 | 3 | 4;
+  title: string;
+  currentStep: 1 | 2 | 3 | 4;
+  onHeaderClick: () => void;
+  children: React.ReactNode;
+}
+
+function StepPanel({
+  stepNumber,
+  title,
+  currentStep,
+  onHeaderClick,
+  children,
+}: StepPanelProps) {
+  const isOpen = currentStep === stepNumber;
+  const isDone = currentStep > stepNumber;
+  const isLocked = currentStep < stepNumber;
+
+  return (
+    <div
+      className={`rounded-2xl border transition-colors ${
+        isOpen
+          ? "border-indigo-500/60 bg-zinc-900"
+          : isDone
+          ? "border-zinc-700 bg-zinc-900/50"
+          : "border-zinc-800 bg-zinc-900/30 opacity-50"
+      }`}
+    >
+      {/* Header */}
+      <button
+        type="button"
+        onClick={onHeaderClick}
+        disabled={isLocked}
+        className="flex w-full items-center gap-3 px-5 py-4 text-left disabled:cursor-default"
+      >
+        <span
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+            isDone
+              ? "bg-emerald-500 text-white"
+              : isOpen
+              ? "bg-indigo-500 text-white"
+              : "border border-zinc-600 text-zinc-500"
+          }`}
+        >
+          {isDone ? "✓" : stepNumber}
+        </span>
+
+        <span
+          className={`flex-1 text-sm font-semibold ${
+            isLocked ? "text-zinc-600" : "text-zinc-100"
+          }`}
+        >
+          {title}
+        </span>
+
+        {!isLocked && (
+          <ChevronDown
+            className={`h-4 w-4 text-zinc-500 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="border-t border-zinc-800 px-5 py-5">{children}</div>
+      )}
+    </div>
+  );
+}
 
 export default function Home() {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const [config, setConfig] = useState<ConfigState>(INITIAL_STATE);
   const [darkMode, setDarkMode] = useState(true);
-  const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [showQuestionnaire, setShowQuestionnaire] = useState(false);
-  const [homeProductContext, setHomeProductContext] = useState<string | null>(null);
 
   useEffect(() => {
     const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    if (darkMode) root.classList.add("dark");
+    else root.classList.remove("dark");
   }, [darkMode]);
 
-  const handleAnalyze = async () => {
-    if (!query.trim() || query.trim().length < 2) {
-      setError("Please enter a product category (at least 2 characters).");
-      return;
+  function patch(partial: Partial<ConfigState>) {
+    setConfig((prev) => ({ ...prev, ...partial }));
+  }
+
+  function goToStep(step: 1 | 2 | 3 | 4) {
+    if (step <= config.currentStep) {
+      patch({ currentStep: step });
     }
+  }
+
+  const handleAnalyze = async () => {
+    if (!config.category.trim()) return;
 
     setError(null);
-    setLoadingStage("research");
+    patch({ loadingStage: "research" });
 
     let analysisId: string;
     let competitors: Competitor[];
 
-    // ── Stage 1: Research ────────────────────────────────────────────────────
+    // Build product context string for the API
+    let homeProductContext: string | null = null;
+    if (config.productContext.type === "questionnaire" && config.productContext.content) {
+      homeProductContext = config.productContext.content;
+    } else if (config.productContext.type === "file" && config.productContext.content) {
+      homeProductContext = config.productContext.content.includes("||")
+        ? config.productContext.content.split("||")[1]
+        : config.productContext.content;
+    }
+
+    // Stage 1: Research
     try {
       const res = await fetch("/api/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          category_input: query.trim(),
+          category_input: config.category.trim(),
           ...(homeProductContext && { home_product_context: homeProductContext }),
+          market_scope: {
+            geography: config.geography,
+            segment: config.segment,
+            custom_competitors: config.customCompetitors,
+          },
         }),
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.error || "Something went wrong. Please try again.");
-        setLoadingStage("idle");
+        patch({ loadingStage: "idle" });
         return;
       }
 
@@ -61,13 +176,17 @@ export default function Home() {
       competitors = data.competitors;
     } catch {
       setError("Network error. Please check your connection and try again.");
-      setLoadingStage("idle");
+      patch({ loadingStage: "idle" });
       return;
     }
 
-    // ── Stage 2: PRD generation (only when product context is available) ─────
+    // Stage 2: visual analysis step
+    patch({ loadingStage: "analysis" });
+    await new Promise<void>((r) => setTimeout(r, 800));
+
+    // Stage 3: PRD generation
     if (homeProductContext && homeProductContext.trim().length >= 10) {
-      setLoadingStage("prd");
+      patch({ loadingStage: "prd" });
       try {
         await fetch("/api/generate-prd", {
           method: "POST",
@@ -78,144 +197,140 @@ export default function Home() {
             home_product_context: homeProductContext.trim(),
           }),
         });
-        // Non-blocking: if PRD generation fails, we still navigate to the analysis
       } catch {
-        // Swallow — user can generate PRD from the analysis page
+        // Non-blocking
       }
     }
 
     router.push(`/analysis/${analysisId}`);
   };
 
-  const handleQuestionnaireSubmit = (context: string) => {
-    setHomeProductContext(context);
-  };
+  const isLoading = config.loadingStage !== "idle";
 
-  const loading = loadingStage !== "idle";
+  if (isLoading) {
+    return (
+      <AnalysisProgress
+        stage={config.loadingStage}
+        onCancel={() => patch({ loadingStage: "idle" })}
+      />
+    );
+  }
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center px-4 transition-colors">
-      {/* Background */}
-      <div className="fixed inset-0 -z-10 bg-zinc-100 transition-colors dark:bg-zinc-900" />
-
-      {/* Dark/Light mode toggle */}
+    <div className="min-h-screen bg-zinc-950 px-4 py-12">
+      {/* Dark/light toggle */}
       <button
         onClick={() => setDarkMode(!darkMode)}
-        className="fixed right-4 top-4 z-50 rounded-full bg-zinc-200 p-2.5 text-zinc-600 transition-colors hover:bg-zinc-300 hover:text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+        className="fixed right-4 top-4 z-50 rounded-full bg-zinc-800 p-2.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
         aria-label="Toggle dark mode"
       >
         {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </button>
 
-      {/* Staged loading overlay */}
-      {loading && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-zinc-900/60 backdrop-blur-sm">
-          <div className="flex w-80 flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-xl dark:bg-zinc-800">
-            <p className="text-base font-medium text-zinc-700 dark:text-zinc-300">
-              {loadingStage === "research"
-                ? "Researching competitors..."
-                : "Generating PRD sections..."}
-            </p>
-            {/* Progress bar */}
-            <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
-              <div
-                key={loadingStage}
-                className={`h-full rounded-full bg-indigo-500 ${
-                  loadingStage === "research"
-                    ? "animate-progress-research"
-                    : "animate-progress-prd"
-                }`}
-              />
-            </div>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
-              {loadingStage === "research" ? "~15 seconds" : "~30 seconds"}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Main content */}
-      <div className="w-full max-w-2xl space-y-8 text-center">
-        <div className="space-y-3">
-          <h1 className="text-4xl font-bold tracking-tight text-zinc-900 transition-colors dark:text-white">
+      <div className="mx-auto max-w-3xl space-y-3">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-white">
             AI Product Sense
           </h1>
-          <p className="text-zinc-500 transition-colors dark:text-zinc-400">
+          <p className="mt-2 text-sm text-zinc-500">
             Competitive analysis and PRD generation, powered by AI
           </p>
         </div>
 
-        <div className="space-y-4">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !loading) handleAnalyze();
-            }}
-            placeholder="Describe your product category (e.g. AI scheduling apps for knowledge workers)"
-            className="w-full rounded-xl border border-zinc-300 bg-white px-5 py-4 text-base text-zinc-900 placeholder-zinc-500 outline-none ring-indigo-500 transition-all focus:border-indigo-500 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
-            disabled={loading}
-          />
-
-          {/* "I don't have a PRD" toggle */}
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={() => setShowQuestionnaire(true)}
-              className="text-sm text-indigo-500 underline-offset-2 transition-colors hover:text-indigo-400 hover:underline"
-              disabled={loading}
-            >
-              I don&apos;t have a PRD
-            </button>
-            {homeProductContext && (
-              <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-500">
-                Product context added
-              </span>
-            )}
+        {error && (
+          <div className="rounded-lg border border-red-800 bg-red-900/20 px-4 py-3 text-sm text-red-400">
+            {error}
           </div>
+        )}
 
-          {error && (
-            <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-              {error}
-            </div>
-          )}
+        {/* Step 1 */}
+        <StepPanel
+          stepNumber={1}
+          title={STEP_TITLES[0]}
+          currentStep={config.currentStep}
+          onHeaderClick={() => goToStep(1)}
+        >
+          <CategoryInput
+            value={config.category}
+            disambiguated={config.disambiguated}
+            onChange={(value, disambiguated) =>
+              patch({ category: value, disambiguated })
+            }
+            onNext={() => {
+              if (config.category.trim().length >= 2) patch({ currentStep: 2 });
+            }}
+          />
+        </StepPanel>
 
-          <button
-            onClick={handleAnalyze}
-            disabled={loading}
-            className="w-full rounded-xl bg-indigo-500 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900"
-          >
-            {loading ? "Analyzing..." : "Analyze"}
-          </button>
-        </div>
-      </div>
+        {/* Step 2 */}
+        <StepPanel
+          stepNumber={2}
+          title={STEP_TITLES[1]}
+          currentStep={config.currentStep}
+          onHeaderClick={() => goToStep(2)}
+        >
+          <ProductContext
+            value={config.productContext}
+            onChange={(ctx) => patch({ productContext: ctx })}
+            onNext={() => patch({ currentStep: 3 })}
+            onSkip={() =>
+              patch({
+                productContext: { type: "skip", content: "" },
+                currentStep: 3,
+              })
+            }
+          />
+        </StepPanel>
 
-      {/* Demo card */}
-      <div className="w-full max-w-2xl mt-8">
-        <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
-          <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
-            Or explore a live demo →
-          </p>
+        {/* Step 3 */}
+        <StepPanel
+          stepNumber={3}
+          title={STEP_TITLES[2]}
+          currentStep={config.currentStep}
+          onHeaderClick={() => goToStep(3)}
+        >
+          <AnalysisSettings
+            geography={config.geography}
+            segment={config.segment}
+            customCompetitors={config.customCompetitors}
+            onChangeGeo={(geo) => patch({ geography: geo })}
+            onChangeSegment={(seg) => patch({ segment: seg })}
+            onChangeCompetitors={(comps) => patch({ customCompetitors: comps })}
+            onNext={() => patch({ currentStep: 4 })}
+          />
+        </StepPanel>
+
+        {/* Step 4 */}
+        <StepPanel
+          stepNumber={4}
+          title={STEP_TITLES[3]}
+          currentStep={config.currentStep}
+          onHeaderClick={() => goToStep(4)}
+        >
+          <LaunchPanel
+            config={config}
+            onLaunch={handleAnalyze}
+            loading={isLoading}
+          />
+        </StepPanel>
+
+        {/* Demo link */}
+        <div className="pt-4 border-t border-zinc-800">
+          <p className="mb-3 text-sm text-zinc-600">Or explore a live demo →</p>
           <a
             href="/analysis/ai-scheduling-demo-2026/share"
-            className="block rounded-xl border border-zinc-200 bg-white px-5 py-4 text-left transition-colors hover:border-indigo-400 hover:bg-indigo-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-indigo-500 dark:hover:bg-zinc-700/80"
+            className="block rounded-xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-left transition-colors hover:border-indigo-500/50 hover:bg-zinc-800"
           >
-            <p className="font-semibold text-zinc-900 dark:text-white">
+            <p className="font-semibold text-zinc-200">
               AI Scheduling Apps — Smart Scheduler context
             </p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-sm text-zinc-500">
               8 competitors · PRD pre-generated · Read-only
             </p>
           </a>
         </div>
       </div>
-
-      {/* Questionnaire Modal */}
-      <QuestionnaireModal
-        open={showQuestionnaire}
-        onOpenChange={setShowQuestionnaire}
-        onSubmit={handleQuestionnaireSubmit}
-      />
     </div>
   );
 }

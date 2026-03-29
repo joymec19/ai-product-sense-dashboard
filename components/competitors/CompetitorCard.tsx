@@ -8,15 +8,15 @@ interface CompetitorCardProps {
 }
 
 export default function CompetitorCard({ competitor, isHome }: CompetitorCardProps) {
-  const { name, pricing, scores, featureSupport } = competitor;
+  const { name, pricing, ai_sophistication, featureSupport } = competitor;
 
   // Top 3 fully-supported features
-  const topFeatures = Object.entries(featureSupport)
+  const topFeatures = Object.entries(featureSupport ?? {})
     .filter(([, status]) => status === "full")
     .slice(0, 3)
     .map(([feature]) => feature);
 
-  const aiScore = scores.ai_sophistication ?? 0;
+  const aiScore = ai_sophistication ?? 0;
 
   const priceLabel = pricing.has_free_tier
     ? pricing.starting_price_usd
