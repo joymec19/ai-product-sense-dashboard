@@ -109,6 +109,22 @@
     box-shadow: none !important;
   }
 
+  body {
+    background: white;
+    color: black;
+  }
+
+  /* Hide elements marked for print suppression */
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  /* Hide layout chrome */
+  .analysis-nav,
+  .tab-bar {
+    display: none;
+  }
+
   /* Hide right panel, nav bar, toast, and all buttons */
   [data-panel="right"],
   nav,
