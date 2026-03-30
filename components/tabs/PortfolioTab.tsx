@@ -3,9 +3,23 @@
 
 import { useState, useEffect } from "react";
 import { useAnalysis } from "@/lib/context/AnalysisContext";
+import { useAnalysisData } from "@/hooks/useAnalysis";
 import { supabase } from "@/lib/supabase";
 import { Eye, EyeOff, Copy, Check, Plus, Code } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+
+function TabSkeleton() {
+  return (
+    <div className="p-6 space-y-4 max-w-3xl mx-auto">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="rounded-2xl bg-zinc-900 border border-zinc-800 p-6 space-y-3">
+          <div className="h-4 bg-zinc-800 rounded animate-pulse w-1/3" />
+          <div className="h-10 bg-zinc-800 rounded animate-pulse" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -31,7 +45,8 @@ interface PRDVersion {
 }
 
 export default function PortfolioTab() {
-  const { analysisId, shareToken, interviewerMode, toggleInterviewerMode } = useAnalysis();
+  const { analysisId, shareToken: ctxShareToken, interviewerMode, toggleInterviewerMode } = useAnalysis();
+  const { analysis, loading } = useAnalysisData(analysisId);
   const { toast } = useToast();
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
@@ -41,11 +56,8 @@ export default function PortfolioTab() {
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [versions, setVersions] = useState<PRDVersion[]>([]);
 
-  const shareUrl = shareToken
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/analysis/${shareToken}/share`
-    : "";
-
-  const embedCode = `<iframe src="${shareUrl}" width="100%" height="600" frameborder="0" title="Competitive Analysis"></iframe>`;
+  // Prefer context shareToken (already fetched), fall back to hook analysis row
+  const shareToken = ctxShareToken ?? analysis?.share_token ?? null;
 
   useEffect(() => {
     if (!analysisId) return;
@@ -65,6 +77,14 @@ export default function PortfolioTab() {
         if (data) setVersions(data as PRDVersion[]);
       });
   }, [analysisId]);
+
+  if (loading && !ctxShareToken) return <TabSkeleton />;
+
+  const shareUrl = shareToken
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/analysis/${shareToken}/share`
+    : "";
+
+  const embedCode = `<iframe src="${shareUrl}" width="100%" height="600" frameborder="0" title="Competitive Analysis"></iframe>`;
 
   const handleCopyShare = () => {
     if (!shareUrl) return;
