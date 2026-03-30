@@ -1,6 +1,7 @@
 // app/api/generate-prd/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { jsonrepair } from "jsonrepair";
 import { PRDSchema, type PRDContent } from "@/lib/schemas/prd";
 import type { Competitor } from "@/lib/schemas/competitor";
 
@@ -79,6 +80,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "home_product_context is required (min 10 chars)." }, { status: 400 });
     }
 
+    // ── Verify analysis_id exists ───────────────────────────────────────────
+    const supabase = getSupabase();
+    const { data: analysisRow, error: analysisLookupErr } = await supabase
+      .from("analyses")
+      .select("id")
+      .eq("id", analysis_id)
+      .single();
+
+    if (analysisLookupErr || !analysisRow) {
+      console.error("[generate-prd] analysis_id not found:", analysis_id, analysisLookupErr?.message);
+      return NextResponse.json({ error: "analysis_id not found." }, { status: 404 });
+    }
+
     const userMessage = JSON.stringify({
       home_product_context: home_product_context.trim(),
       competitors,
@@ -88,23 +102,30 @@ export async function POST(req: NextRequest) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 55000); // 55s — leave 5s buffer for DB write
 
-    const llmResponse = await fetch(SARVAM_API_URL, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "api-subscription-key": process.env.SARVAM_API_KEY!,
-      },
-      body: JSON.stringify({
-        model: SARVAM_MODEL,
-        temperature: 0.2,
-        max_tokens: 7500,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userMessage },
-        ],
-      }),
-    });
+    let llmResponse: Response;
+    try {
+      llmResponse = await fetch(SARVAM_API_URL, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "api-subscription-key": process.env.SARVAM_API_KEY!,
+        },
+        body: JSON.stringify({
+          model: SARVAM_MODEL,
+          temperature: 0.2,
+          max_tokens: 7500,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userMessage },
+          ],
+        }),
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeout);
+      console.error("[generate-prd LLM network error]", fetchErr);
+      return NextResponse.json({ error: "LLM network error. Please retry." }, { status: 502 });
+    }
 
     clearTimeout(timeout);
 
@@ -147,7 +168,7 @@ export async function POST(req: NextRequest) {
           : stripped;
       console.log("[PRD parse] after strip (first 300):", stripped.slice(0, 300));
       console.log("[PRD parse] jsonString (first 300):", jsonString.slice(0, 300));
-      parsedPRD = JSON.parse(jsonString);
+      parsedPRD = JSON.parse(jsonrepair(jsonString));
     } catch (e) {
       console.error("[PRD JSON Parse Error]", String(e));
       console.error("[PRD raw content]:", rawContent.slice(0, 2000));
@@ -170,7 +191,6 @@ export async function POST(req: NextRequest) {
     const prd: PRDContent = validation.data;
 
     // ── Persist to Supabase ─────────────────────────────────────────────────
-    const supabase = getSupabase();
     const { data: insertedPRD, error: dbError } = await supabase
       .from("prd_documents")
       .insert({
