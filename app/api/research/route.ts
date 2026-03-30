@@ -21,14 +21,23 @@ CRITICAL INSTRUCTIONS:
 Return a JSON object with a single key "competitors" containing an array of exactly 5 objects. Each object must have exactly these fields:
 {
   "name": string,
+  "website": string or null,
+  "founded": number (year) or null,
+  "target_segment": string,
   "pricing": { "model": string, "starting_price_usd": number or null, "has_free_tier": boolean },
-  "features": array of strings,
+  "features": array of strings (top 8-12 key features),
   "ratings": { "g2": number or null, "capterra": number or null, "overall": number between 1 and 5 },
   "positioning": string,
   "strengths": array of strings,
   "weaknesses": array of strings,
   "gaps": array of strings,
-  "scores": { "market_presence": number 1-10, "product_depth": number 1-10, "ease_of_use": number 1-10, "value_for_money": number 1-10, "innovation": number 1-10 }
+  "scores": { "market_presence": number 1-10, "product_depth": number 1-10, "ease_of_use": number 1-10, "value_for_money": number 1-10, "innovation": number 1-10 },
+  "ai_sophistication": number 1-10,
+  "ux_score": number 1-10,
+  "mobile_score": number 1-10,
+  "integration_count": integer (estimated number of integrations),
+  "review_summary": string (1-2 sentence summary of user sentiment),
+  "moat_scores": { "switching_costs": number 1-10, "network_effects": number 1-10, "data_advantages": number 1-10, "brand": number 1-10 }
 }`;
 
 export async function POST(req: NextRequest) {
@@ -186,6 +195,7 @@ export async function POST(req: NextRequest) {
         category_input: category_input.trim(),
         home_product_context: home_product_context ?? null,
         market_scope: market_scope ?? null,
+        status: "complete",
       })
       .select("id")
       .single();
@@ -204,21 +214,32 @@ export async function POST(req: NextRequest) {
       .from("competitors")
       .insert(
         competitors.map((c) => ({
-          analysis_id: insertedAnalysis.id, // or whatever FK column you use
+          analysis_id: insertedAnalysis.id,
           name: c.name,
-          pricing: c.pricing,           // jsonb column
-          features: c.features,         // jsonb or text[] column
-          ratings: c.ratings,           // jsonb column
+          pricing: c.pricing,
+          features: c.features,
+          ratings: c.ratings,
           positioning: c.positioning,
-          strengths: c.strengths,       // jsonb column
-          weaknesses: c.weaknesses,     // jsonb column
-          gaps: c.gaps,                 // jsonb column
-          // flattened scores fields — no `scores` key
+          strengths: c.strengths,
+          weaknesses: c.weaknesses,
+          gaps: c.gaps,
+          // flattened scores fields
           market_presence: c.scores.market_presence,
           product_depth: c.scores.product_depth,
           ease_of_use: c.scores.ease_of_use,
           value_for_money: c.scores.value_for_money,
           innovation: c.scores.innovation,
+          // new optional columns
+          logo_url: c.logo_url ?? null,
+          founded: c.founded ?? null,
+          website: c.website ?? null,
+          target_segment: c.target_segment ?? null,
+          ai_sophistication: c.ai_sophistication ?? null,
+          ux_score: c.ux_score ?? null,
+          mobile_score: c.mobile_score ?? null,
+          integration_count: c.integration_count ?? null,
+          review_summary: c.review_summary ?? null,
+          moat_scores: c.moat_scores ?? null,
         }))
       );
 
