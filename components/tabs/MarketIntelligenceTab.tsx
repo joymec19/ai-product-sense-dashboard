@@ -1,13 +1,26 @@
 // components/tabs/MarketIntelligenceTab.tsx
 "use client";
 
-import { useState, useEffect } from "react";
 import { useAnalysis } from "@/lib/context/AnalysisContext";
-import { supabase } from "@/lib/supabase";
+import { useAnalysisData } from "@/hooks/useAnalysis";
 import MarketSizingCalculator from "@/components/market/MarketSizingCalculator";
 import TrendFeed from "@/components/market/TrendFeed";
 import FundingTracker from "@/components/market/FundingTracker";
 import AdjacentMarketMap from "@/components/market/AdjacentMarketMap";
+
+function TabSkeleton() {
+  return (
+    <div className="p-6 space-y-4 max-w-4xl mx-auto">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="rounded-2xl bg-zinc-900 border border-zinc-800 p-6 space-y-3">
+          <div className="h-4 bg-zinc-800 rounded animate-pulse w-1/3" />
+          <div className="h-6 bg-zinc-800 rounded animate-pulse" />
+          <div className="h-6 bg-zinc-800 rounded animate-pulse w-4/5" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function SectionCard({
   title,
@@ -27,20 +40,13 @@ function SectionCard({
 }
 
 export default function MarketIntelligenceTab() {
-  const { analysisId, competitors, analysisTitle } = useAnalysis();
-  const [adjacentMarkets, setAdjacentMarkets] = useState<string[]>([]);
+  const { analysisId, analysisTitle } = useAnalysis();
+  const { analysis, competitors, marketData, loading } = useAnalysisData(analysisId);
 
-  useEffect(() => {
-    if (!analysisId) return;
-    supabase
-      .from("market_data")
-      .select("adjacent_markets")
-      .eq("analysis_id", analysisId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.adjacent_markets) setAdjacentMarkets(data.adjacent_markets as string[]);
-      });
-  }, [analysisId]);
+  if (loading) return <TabSkeleton />;
+
+  const adjacentMarkets = marketData?.adjacent_markets ?? [];
+  const category = analysis?.market_scope ?? analysisTitle;
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
@@ -51,7 +57,7 @@ export default function MarketIntelligenceTab() {
 
       {/* C2 — Market Trend Feed */}
       <SectionCard title="Market Trend Feed">
-        <TrendFeed category={analysisTitle} />
+        <TrendFeed category={category} />
       </SectionCard>
 
       {/* C3 — Funding Tracker */}
@@ -63,7 +69,7 @@ export default function MarketIntelligenceTab() {
       <SectionCard title="Adjacent Market Map">
         <AdjacentMarketMap
           analysisId={analysisId}
-          category={analysisTitle}
+          category={category}
           adjacentMarkets={adjacentMarkets}
         />
       </SectionCard>

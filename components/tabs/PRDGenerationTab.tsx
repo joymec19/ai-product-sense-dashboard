@@ -3,12 +3,31 @@
 
 import { useState } from "react";
 import { useAnalysis } from "@/lib/context/AnalysisContext";
+import { useAnalysisData } from "@/hooks/useAnalysis";
 import PRDEditor from "@/components/prd/PRDEditor";
 import { Download, ChevronDown } from "lucide-react";
 
+function TabSkeleton() {
+  return (
+    <div className="p-6 max-w-3xl mx-auto space-y-4">
+      <div className="h-8 bg-zinc-800 rounded animate-pulse w-1/4" />
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="rounded-2xl bg-zinc-900 border border-zinc-800 p-6 space-y-3">
+          <div className="h-4 bg-zinc-800 rounded animate-pulse w-1/3" />
+          <div className="h-6 bg-zinc-800 rounded animate-pulse" />
+          <div className="h-6 bg-zinc-800 rounded animate-pulse w-4/5" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function PRDGenerationTab() {
   const { analysisId, interviewerMode } = useAnalysis();
+  const { loading } = useAnalysisData(analysisId);
   const [showExportMenu, setShowExportMenu] = useState(false);
+
+  if (loading) return <TabSkeleton />;
 
   const handleExportMarkdown = () => {
     setShowExportMenu(false);

@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useAnalysis } from "@/lib/context/AnalysisContext";
+import { useAnalysisData } from "@/hooks/useAnalysis";
 import { Send, Settings } from "lucide-react";
 
 interface Message {
@@ -19,7 +20,11 @@ const QUICK_ACTIONS = [
 ];
 
 export default function AIAssistantTab() {
-  const { competitors } = useAnalysis();
+  const { analysisId, competitors: ctxCompetitors } = useAnalysis();
+  const { competitors: hookCompetitors, prd, loading } = useAnalysisData(analysisId);
+  // Prefer hook competitors (service-role fetch); fall back to context while loading
+  const competitors = hookCompetitors.length ? hookCompetitors : ctxCompetitors;
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -51,6 +56,9 @@ export default function AIAssistantTab() {
     }
 
     if (lower.includes("gap") || lower.includes("market gap")) {
+      if (prd?.problem_statement) {
+        return `Key market gap from your PRD: "${prd.problem_statement}"`;
+      }
       const gap = competitors[0]?.gaps?.[0];
       return gap
         ? `The biggest market gap identified: "${gap}"`
@@ -62,11 +70,18 @@ export default function AIAssistantTab() {
     }
 
     if (lower.includes("enterprise")) {
+      const positioning = prd?.gtm?.positioning_statement;
+      if (positioning) {
+        return `Enterprise reframe — your PRD positioning: "${positioning}"\n\nFor enterprise buyers, lead with compliance, security, and ROI. Emphasise 'AI governance' and 'audit trails' over speed.`;
+      }
       return "For enterprise reframing: Lead with compliance, security, and ROI. Enterprise buyers need 'AI governance' and 'audit trails', not 'speed'. Position as 'AI-assisted product governance platform' rather than an AI PM tool.";
     }
 
     if (lower.includes("interview")) {
-      return "Interview prep: Be ready to answer — 'How is this different from just asking ChatGPT?' Your answer: structured workflows, domain-specific training data, integrated competitive intelligence, and shareable artifacts built for product teams.";
+      const objective = prd?.objective;
+      return objective
+        ? `Interview prep — your product objective: "${objective}"\n\nBe ready to answer: 'How is this different from just asking ChatGPT?' Your answer: structured workflows, domain-specific training, competitive intelligence, and shareable artifacts for product teams.`
+        : "Interview prep: Be ready to answer — 'How is this different from just asking ChatGPT?' Your answer: structured workflows, domain-specific training data, integrated competitive intelligence, and shareable artifacts built for product teams.";
     }
 
     return "I can help analyze your competitive landscape, identify market gaps, and sharpen your positioning. Try one of the quick actions above or ask a specific question.";
@@ -82,6 +97,26 @@ export default function AIAssistantTab() {
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setInput("");
   };
+
+  // Show skeleton only on initial load when no competitors from context either
+  if (loading && !competitors.length) {
+    return (
+      <div className="flex flex-col h-full p-4 space-y-3">
+        <div className="flex gap-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-7 w-24 bg-zinc-800 rounded-full animate-pulse" />
+          ))}
+        </div>
+        <div className="flex-1 space-y-4 py-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}>
+              <div className="h-12 w-2/3 bg-zinc-800 rounded-2xl animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">

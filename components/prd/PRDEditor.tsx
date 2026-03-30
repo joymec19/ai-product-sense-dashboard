@@ -82,7 +82,7 @@ export default function PRDEditor({ analysisId, interviewerMode = false }: PRDEd
       const { data: existingPrd, error: prdErr } = await supabase
         .from("prd_documents")
         .select("*")
-        .eq("analysis_id", report.id)
+        .eq("analysis_id", analysisId)
         .order("version", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -138,7 +138,7 @@ export default function PRDEditor({ analysisId, interviewerMode = false }: PRDEd
         signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          analysis_id: researchReportId,
+          analysis_id: analysisId,
           competitors,
           home_product_context: homeProductContext,
         }),
