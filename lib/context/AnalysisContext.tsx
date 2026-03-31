@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import type { CompetitorData } from "@/lib/types/dashboard";
+import { useInterviewerMode } from "@/context/InterviewerModeContext";
 
 interface AnalysisContextValue {
   analysisId: string;
@@ -27,11 +28,8 @@ export function AnalysisProvider({
   const [competitors, setCompetitors] = useState<CompetitorData[]>([]);
   const [analysisTitle, setAnalysisTitle] = useState("Analysis");
   const [shareToken, setShareToken] = useState<string | null>(null);
-  const [interviewerMode, setInterviewerMode] = useState(false);
 
-  useEffect(() => {
-    setInterviewerMode(localStorage.getItem("interviewerMode") === "true");
-  }, []);
+  const { interviewerMode, toggleInterviewerMode } = useInterviewerMode();
 
   useEffect(() => {
     if (!analysisId) return;
@@ -56,14 +54,6 @@ export function AnalysisProvider({
         }
       });
   }, [analysisId]);
-
-  const toggleInterviewerMode = useCallback(() => {
-    setInterviewerMode((prev) => {
-      const next = !prev;
-      localStorage.setItem("interviewerMode", String(next));
-      return next;
-    });
-  }, []);
 
   const handleShare = useCallback(async () => {
     if (!shareToken) return;

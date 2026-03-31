@@ -38,9 +38,11 @@ function SharePageContent({
   prd: PRDDocument | null;
   analysisHref: string;
 }) {
+  const dateLabel = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
   return (
     <main className="min-h-screen bg-white px-4 py-10 text-zinc-900">
-      <div className="mx-auto max-w-3xl space-y-10">
+      <div className="mx-auto max-w-4xl space-y-10">
         {/* Header */}
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
@@ -49,15 +51,33 @@ function SharePageContent({
           <h1 className="mt-1 text-3xl font-bold">{category}</h1>
         </div>
 
-        {/* Radar Chart */}
+        {/* Summary card */}
+        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-5 flex flex-wrap gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold px-2.5 py-1">
+              {category}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-zinc-600">
+            <span className="font-semibold text-zinc-800">{competitors.length}</span>
+            <span>competitors analyzed</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-zinc-500">
+            <span>{dateLabel}</span>
+          </div>
+        </div>
+
+        {/* Radar Chart — full width */}
         {competitors.length > 0 && (
           <section>
             <h2 className="mb-4 text-xl font-semibold">Competitive Radar</h2>
-            <RadarChart competitors={competitors} />
+            <div className="w-full">
+              <RadarChart competitors={competitors} />
+            </div>
           </section>
         )}
 
-        {/* Feature Matrix */}
+        {/* Feature Matrix — read-only */}
         {competitors.length > 0 && (
           <section>
             <h2 className="mb-4 text-xl font-semibold">Feature Matrix</h2>
@@ -65,37 +85,39 @@ function SharePageContent({
           </section>
         )}
 
-        {/* PRD Summary */}
+        {/* PRD Summary card */}
         {prd ? (
-          <section className="space-y-6">
+          <section className="rounded-xl border border-zinc-200 p-6 space-y-5">
             <h2 className="text-xl font-semibold">PRD Summary</h2>
 
             <div>
-              <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Objective
               </h3>
-              <p className="text-zinc-700">{prd.objective}</p>
+              <p className="text-zinc-700 text-sm leading-relaxed">{prd.objective}</p>
             </div>
 
             <div>
-              <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Problem
               </h3>
-              <p className="text-zinc-700">{prd.problem_statement}</p>
+              <p className="text-zinc-700 text-sm leading-relaxed">{prd.problem_statement}</p>
             </div>
 
             <div>
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
-                P1 Features (Must Have)
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Top P1 Features
               </h3>
-              <ul className="space-y-3">
+              <div className="flex flex-wrap gap-2">
                 {prd.features.p1.slice(0, 3).map((f, i) => (
-                  <li key={i} className="rounded-lg border border-zinc-200 p-4">
-                    <p className="font-semibold text-zinc-800">{f.title}</p>
-                    <p className="mt-1 text-sm text-zinc-600">{f.description}</p>
-                  </li>
+                  <span
+                    key={i}
+                    className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5"
+                  >
+                    {f.title}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </div>
           </section>
         ) : (
@@ -104,7 +126,7 @@ function SharePageContent({
           </section>
         )}
 
-        {/* View Full Analysis link */}
+        {/* View Full Analysis CTA */}
         <div className="border-t border-zinc-200 pt-6">
           <a
             href={analysisHref}
@@ -113,6 +135,11 @@ function SharePageContent({
             View Full Analysis →
           </a>
         </div>
+
+        {/* Footer */}
+        <footer className="border-t border-zinc-100 pt-6 text-center text-xs text-zinc-400">
+          Built with AI Product Sense · joymec19
+        </footer>
       </div>
     </main>
   );
@@ -213,7 +240,7 @@ export default async function SharePage({ params }: PageProps) {
       competitors={competitors}
       allFeatures={allFeatures}
       prd={prd}
-      analysisHref={`/analysis/${analysis.id}`}
+      analysisHref="/"
     />
   );
 }

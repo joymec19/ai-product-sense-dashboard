@@ -3,6 +3,7 @@
 
 import { useMemo, useState } from "react";
 import { useAnalysis } from "@/lib/context/AnalysisContext";
+import { useInterviewerMode } from "@/context/InterviewerModeContext";
 import { useAnalysisData } from "@/hooks/useAnalysis";
 import FeatureMatrix from "@/components/competitors/FeatureMatrix";
 import RadarChart from "@/components/charts/RadarChart";
@@ -11,6 +12,7 @@ import PositioningMap from "@/components/charts/PositioningMap";
 import StrengthsGapsTable from "@/components/competitive/StrengthsGapsTable";
 import SentimentHeatmap from "@/components/competitive/SentimentHeatmap";
 import MoatAssessment from "@/components/competitive/MoatAssessment";
+import { Tooltip } from "@/components/ui/tooltip";
 import type { CompetitorData } from "@/lib/types/dashboard";
 
 function TabSkeleton() {
@@ -29,16 +31,28 @@ function TabSkeleton() {
 
 function SectionCard({
   title,
+  tooltip,
   children,
 }: {
   title: string;
+  tooltip?: string;
   children: React.ReactNode;
 }) {
+  const heading = (
+    <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-widest mb-4">
+      {title}
+    </h3>
+  );
+
   return (
     <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-6">
-      <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-widest mb-4">
-        {title}
-      </h3>
+      {tooltip ? (
+        <Tooltip content={tooltip} side="bottom">
+          {heading}
+        </Tooltip>
+      ) : (
+        heading
+      )}
       {children}
     </div>
   );
@@ -128,6 +142,7 @@ function EnhancedCompetitorCard({ competitor }: { competitor: CompetitorData }) 
 
 export default function CompetitiveAnalysisTab() {
   const { analysisId } = useAnalysis();
+  const { interviewerMode } = useInterviewerMode();
   const { competitors, loading } = useAnalysisData(analysisId);
   const [gapsOnly, setGapsOnly] = useState(false);
 
@@ -155,10 +170,17 @@ export default function CompetitiveAnalysisTab() {
     </div>
   );
 
+  const tip = interviewerMode
+    ? (text: string) => text
+    : () => undefined;
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* A1 — Competitor Profile Cards */}
-      <SectionCard title="Competitor Profiles">
+      <SectionCard
+        title="Competitor Profiles"
+        tooltip={tip("Review each competitor's positioning, pricing, and feature coverage")}
+      >
         {competitors.length === 0 ? (
           emptyState
         ) : (
@@ -171,7 +193,10 @@ export default function CompetitiveAnalysisTab() {
       </SectionCard>
 
       {/* A2 — Feature Comparison Matrix */}
-      <SectionCard title="Feature Comparison Matrix">
+      <SectionCard
+        title="Feature Comparison Matrix"
+        tooltip={tip("Compare feature support across competitors (✓ full, ~ partial, ✗ none)")}
+      >
         <div className="flex items-center justify-end mb-3">
           <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer select-none">
             <input
@@ -187,32 +212,50 @@ export default function CompetitiveAnalysisTab() {
       </SectionCard>
 
       {/* A3 — Radar Chart */}
-      <SectionCard title="Competitor Radar">
+      <SectionCard
+        title="Competitor Radar"
+        tooltip={tip("Multi-dimensional radar shows relative strengths across 5 key dimensions")}
+      >
         <RadarChart competitors={competitors} />
       </SectionCard>
 
       {/* A4 — Positioning Map */}
-      <SectionCard title="Positioning Map (2×2 Scatter)">
+      <SectionCard
+        title="Positioning Map (2×2 Scatter)"
+        tooltip={tip("Two-dimensional view of market positioning")}
+      >
         <PositioningMap competitors={competitors} />
       </SectionCard>
 
       {/* A5 — Pricing Analysis */}
-      <SectionCard title="Pricing Analysis">
+      <SectionCard
+        title="Pricing Analysis"
+        tooltip={tip("Compare pricing tiers and free-tier availability")}
+      >
         <PricingChart competitors={competitors} />
       </SectionCard>
 
       {/* A6 — Strengths & Gaps Table */}
-      <SectionCard title="Strengths & Gaps">
+      <SectionCard
+        title="Strengths & Gaps"
+        tooltip={tip("Identify your product's competitive strengths and market gaps")}
+      >
         <StrengthsGapsTable competitors={competitors} />
       </SectionCard>
 
       {/* A7 — User Sentiment Heatmap */}
-      <SectionCard title="User Sentiment Heatmap">
+      <SectionCard
+        title="User Sentiment Heatmap"
+        tooltip={tip("User sentiment across review dimensions for each competitor")}
+      >
         <SentimentHeatmap competitors={competitors} />
       </SectionCard>
 
       {/* A8 — Competitive Moat Assessment */}
-      <SectionCard title="Competitive Moat Assessment">
+      <SectionCard
+        title="Competitive Moat Assessment"
+        tooltip={tip("Evaluate each competitor's defensible moat dimensions")}
+      >
         <MoatAssessment competitors={competitors} />
       </SectionCard>
     </div>
