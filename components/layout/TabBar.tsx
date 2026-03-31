@@ -17,24 +17,32 @@ export type TabValue = (typeof TABS)[number]["value"];
 interface TabBarProps {
   activeTab: TabValue;
   onTabChange: (tab: TabValue) => void;
+  visitedTabs?: Set<TabValue>;
+  interviewerMode?: boolean;
 }
 
-export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
+export default function TabBar({ activeTab, onTabChange, visitedTabs, interviewerMode }: TabBarProps) {
+  const visibleTabs = interviewerMode ? TABS.filter((t) => t.value !== "assistant") : TABS;
+
   return (
     <div className="tab-bar flex-shrink-0 h-12 bg-zinc-900 border-b border-zinc-800 flex items-end overflow-x-auto scrollbar-none px-2">
-      {TABS.map(({ value, label }) => {
+      {visibleTabs.map(({ value, label }) => {
         const isActive = activeTab === value;
+        const isVisited = visitedTabs?.has(value) && !isActive;
         return (
           <button
             key={value}
             onClick={() => onTabChange(value)}
             className={cn(
-              "flex-shrink-0 h-full px-4 text-xs font-medium whitespace-nowrap border-b-2 transition-colors",
+              "flex-shrink-0 h-full px-4 text-xs font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1",
               isActive
                 ? "border-indigo-500 text-white"
                 : "border-transparent text-zinc-400 hover:text-zinc-300 hover:border-zinc-600"
             )}
           >
+            {isVisited && (
+              <span className="text-emerald-400 text-xs">✓</span>
+            )}
             {label}
           </button>
         );
