@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Competitor, CompetitorFeature, CompetitorPositioning } from '@/lib/types'
+import type { StrategicGap } from '@/lib/types/competitive'
 
 export async function getCompetitors(sessionId: string): Promise<Competitor[]> {
   const sb = createClient()
@@ -28,4 +29,14 @@ export async function addCompetitor(sessionId: string, name: string, website?: s
   const { data: { user } } = await sb.auth.getUser()
   await sb.from('competitors').insert({ session_id: sessionId, user_id: user?.id, name, website, is_user_added: true })
   revalidatePath(`/analysis/${sessionId}/competitive`)
+}
+
+export async function getStrategicGaps(sessionId: string): Promise<StrategicGap[]> {
+  const sb = createClient()
+  const { data } = await sb
+    .from('strategic_gaps')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('created_at')
+  return (data ?? []) as StrategicGap[]
 }

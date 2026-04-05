@@ -4,21 +4,22 @@ import { runGTMChain } from '@/lib/llm/gtm'
 import { LLMError } from '@/lib/LLMService'
 import type { CompanyExtraction, PositioningMap } from '@/lib/llm/competitive'
 
-export async function POST(_req: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = await params
   const sb = createClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: session } = await sb.from('analysis_sessions')
-    .select('*').eq('id', params.sessionId).eq('user_id', user.id).single()
+    .select('*').eq('id', sessionId).eq('user_id', user.id).single()
   if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
 
-  await sb.from('analysis_sessions').update({ status: 'running' }).eq('id', params.sessionId)
+  await sb.from('analysis_sessions').update({ status: 'running' }).eq('id', sessionId)
 
   try {
     // Reconstruct competitive context from DB
     const { data: dbCompetitors } = await sb.from('competitors')
-      .select('*, competitor_positioning(*)').eq('session_id', params.sessionId)
+      .select('*, competitor_positioning(*)').eq('session_id', sessionId)
 
     let competitive_extraction: CompanyExtraction | undefined
     let competitive_positioning: PositioningMap | undefined
@@ -67,13 +68,13 @@ export async function POST(_req: NextRequest, { params }: { params: { sessionId:
 
     const result = await runGTMChain({
       product_name: session.product_name, category: session.category,
-      geography: session.geography, sessionId: params.sessionId,
+      geography: session.geography, sessionId,
       competitive_extraction, competitive_positioning,
     })
 
     // Persist gtm_plans
     await sb.from('gtm_plans').upsert({
-      session_id: params.sessionId,
+      session_id: sessionId,
       icp: result.icp,
       positioning_statement: result.positioning.positioning_statement,
       elevator_pitch: result.positioning.elevator_pitch,
@@ -88,7 +89,7 @@ export async function POST(_req: NextRequest, { params }: { params: { sessionId:
 
     // Persist gtm_channels
     const channelRows = result.channels.channels.map(c => ({
-      session_id: params.sessionId,
+      session_id: sessionId,
       channel_name: c.channel_name,
       channel_type: c.channel_type,
       motion: c.motion,
@@ -104,7 +105,7 @@ export async function POST(_req: NextRequest, { params }: { params: { sessionId:
 
     // Persist gtm_experiments (launch phases)
     const experimentRows = result.launch_sequence.phases.map(p => ({
-      session_id: params.sessionId,
+      session_id: sessionId,
       phase_number: p.phase_number,
       phase_name: p.phase_name,
       duration_weeks: p.duration_weeks,
@@ -119,7 +120,7 @@ export async function POST(_req: NextRequest, { params }: { params: { sessionId:
 
     // Persist gtm_messaging (messaging variants)
     const messagingRows = result.positioning.messaging_variants.map(v => ({
-      session_id: params.sessionId,
+      session_id: sessionId,
       variant_label: v.variant_label,
       headline: v.headline,
       subheadline: v.subheadline,
@@ -128,12 +129,12 @@ export async function POST(_req: NextRequest, { params }: { params: { sessionId:
     }))
     await sb.from('gtm_messaging').upsert(messagingRows, { onConflict: 'session_id,variant_label' })
 
-    await sb.from('analysis_sessions').update({ status: 'complete', completed_at: new Date().toISOString() }).eq('id', params.sessionId)
+    await sb.from('analysis_sessions').update({ status: 'complete', completed_at: new Date().toISOString() }).eq('id', sessionId)
     return NextResponse.json({ ok: true, channels: result.channels.channels.length })
 
   } catch (err) {
     const kind = err instanceof LLMError ? err.kind : 'unknown'
-    await sb.from('analysis_sessions').update({ status: 'failed', error_message: kind }).eq('id', params.sessionId)
+    await sb.from('analysis_sessions').update({ status: 'failed', error_message: kind }).eq('id', sessionId)
     const status = kind === 'rate_limit' ? 429 : kind === 'timeout' ? 504 : 500
     return NextResponse.json({ error: kind }, { status })
   }
