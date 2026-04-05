@@ -3,10 +3,10 @@ import { getCompetitors, getCompetitorFeatures, getPositioningScores, getStrateg
 import { CompetitiveHub } from '@/components/features/competitive/CompetitiveHub'
 import { CompetitiveInsightHeader } from '@/components/features/competitive/CompetitiveInsightHeader'
 
-interface Props { params: { sessionId: string } }
+interface Props { params: Promise<{ sessionId: string }> }
 
 export default async function CompetitivePage({ params }: Props) {
-  const { sessionId } = params
+  const { sessionId } = await params
 
   const [session, competitors, features, positioning, gaps] = await Promise.all([
     getSession(sessionId),

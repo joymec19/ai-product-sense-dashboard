@@ -2,10 +2,11 @@ import { getPRDDocument, getPRDSections } from '@/lib/actions/prd'
 import { PRDEditor } from '@/components/features/prd/PRDEditor'
 import { EmptyState } from '@/components/shared/EmptyState'
 
-interface Props { params: { sessionId: string } }
+interface Props { params: Promise<{ sessionId: string }> }
 
 export default async function PRDPage({ params }: Props) {
-  const prd = await getPRDDocument(params.sessionId)
+  const { sessionId } = await params
+  const prd = await getPRDDocument(sessionId)
   if (!prd) return (
     <EmptyState
       icon="file-text"
@@ -15,5 +16,5 @@ export default async function PRDPage({ params }: Props) {
   )
 
   const sections = await getPRDSections(prd.id)
-  return <PRDEditor sessionId={params.sessionId} prd={prd} sections={sections} />
+  return <PRDEditor sessionId={sessionId} prd={prd} sections={sections} />
 }

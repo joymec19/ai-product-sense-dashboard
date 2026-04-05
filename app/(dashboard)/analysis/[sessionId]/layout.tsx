@@ -6,18 +6,19 @@ import { FeatureSubnav } from '@/components/layout/FeatureSubnav'
 
 interface Props {
   children: React.ReactNode
-  params: { sessionId: string }
+  params: Promise<{ sessionId: string }>
 }
 
 export default async function AnalysisLayout({ children, params }: Props) {
-  const session = await getSession(params.sessionId)
+  const { sessionId } = await params
+  const session = await getSession(sessionId)
   if (!session) notFound()
 
   return (
     <SessionProvider session={session}>
       <div className="flex flex-col h-full">
         <AnalysisHeader session={session} />
-        <FeatureSubnav sessionId={params.sessionId} />
+        <FeatureSubnav sessionId={sessionId} />
         <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </div>
     </SessionProvider>
