@@ -5,17 +5,17 @@ import { redirect } from 'next/navigation'
 import type { AnalysisSession } from '@/lib/types'
 
 export async function getSession(id: string): Promise<AnalysisSession | null> {
-  const sb = createClient()
+  const sb = await createClient()
   const { data } = await sb.from('analysis_sessions').select('*').eq('id', id).single()
   return data as AnalysisSession | null
 }
 export async function getSessions(): Promise<AnalysisSession[]> {
-  const sb = createClient()
+  const sb = await createClient()
   const { data } = await sb.from('analysis_sessions').select('*').order('created_at', { ascending: false })
   return (data ?? []) as AnalysisSession[]
 }
 export async function createSession(formData: FormData) {
-  const sb = createClient()
+  const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user) redirect('/login')
   const { data, error } = await sb.from('analysis_sessions').insert({
@@ -31,7 +31,7 @@ export async function createSession(formData: FormData) {
   redirect(`/analysis/${data.id}/competitive`)
 }
 export async function deleteSession(id: string) {
-  const sb = createClient()
+  const sb = await createClient()
   await sb.from('analysis_sessions').delete().eq('id', id)
   revalidatePath('/sessions')
   redirect('/sessions')

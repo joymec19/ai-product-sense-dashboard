@@ -5,7 +5,7 @@ import { LLMError } from '@/lib/LLMService'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params
-  const sb = createClient()
+  const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
