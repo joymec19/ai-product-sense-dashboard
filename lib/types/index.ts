@@ -83,6 +83,56 @@ export interface GTMExperiment {
   status: ExperimentStatus; result_summary?: string
   started_at?: string; ended_at?: string; created_at: string; updated_at: string
 }
+export interface GTMMessaging {
+  id: string; session_id: string; variant_label: string
+  headline: string; subheadline: string | null
+  tone: 'professional' | 'casual' | 'technical' | 'aspirational'
+  target_persona: string | null; created_at: string; updated_at: string
+}
+export interface GTMLaunchPhase {
+  id: string; session_id: string; phase_name: string; phase_order: number
+  start_week: number; end_week: number; objectives: string[]
+  key_actions: string[]; success_gate: string
+  phase_type: 'pre_launch' | 'soft_launch' | 'growth' | 'scale'
+  created_at: string; updated_at: string
+}
+export interface GTMSuccessMetric {
+  id: string; session_id: string; metric_name: string
+  metric_type: 'acquisition' | 'activation' | 'retention' | 'revenue' | 'referral'
+  definition: string; target_value: string; current_value: string | null
+  timeframe: string; owner: string; data_source: string
+  created_at: string; updated_at: string
+}
+export type RiskType = 'market' | 'competitive' | 'regulatory' | 'technology' | 'execution' | 'financial'
+export type WillingnessToPay = 'low' | 'medium' | 'high' | 'enterprise'
+export type DecisionMakingRole = 'champion' | 'decision_maker' | 'influencer' | 'end_user' | 'blocker'
+export type RiskImpact = 'low' | 'medium' | 'high' | 'critical'
+
+export interface BuyerPersona {
+  id: string; session_id: string
+  persona_name: string; title: string; company_size: string
+  industry_verticals: string[]
+  primary_job_to_be_done: string
+  top_pains: string[]; desired_outcomes: string[]
+  buying_triggers: string[]; objections: string[]
+  willingness_to_pay: WillingnessToPay
+  decision_making_role: DecisionMakingRole
+  preferred_channels: string[]; key_quote: string
+  created_at: string; updated_at: string
+}
+
+export interface RiskFactor {
+  id: string; session_id: string
+  risk_title: string
+  risk_type: RiskType
+  description: string
+  probability: Confidence
+  impact: RiskImpact
+  mitigation: string
+  early_warning_signals: string[]
+  created_at: string; updated_at: string
+}
+
 export interface PRDDocument {
   id: string; session_id: string; title: string; version_number: number
   parent_id?: string; is_latest: boolean; status: PRDStatus

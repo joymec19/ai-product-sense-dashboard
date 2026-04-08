@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react'
 import type { GTMPlan, GTMExperiment } from '@/lib/types'
-import { updateExperimentStatus } from '@/lib/actions/gtm'
+import { updateExperimentStatusAction as updateExperimentStatus } from '@/lib/actions/gtm'
 
 const STATUS_COLOR: Record<GTMExperiment['status'], string> = {
   proposed: 'bg-zinc-700 text-zinc-300',

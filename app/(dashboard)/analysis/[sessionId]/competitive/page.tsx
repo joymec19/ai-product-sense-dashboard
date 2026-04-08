@@ -2,6 +2,7 @@ import { getSession } from '@/lib/actions/sessions'
 import { getCompetitors, getCompetitorFeatures, getPositioningScores, getStrategicGaps } from '@/lib/actions/competitive'
 import { CompetitiveHub } from '@/components/features/competitive/CompetitiveHub'
 import { CompetitiveInsightHeader } from '@/components/features/competitive/CompetitiveInsightHeader'
+import { EmptyCompetitiveAnalysis } from '@/components/empty/EmptyCompetitiveAnalysis'
 
 interface Props { params: Promise<{ sessionId: string }> }
 
@@ -17,6 +18,10 @@ export default async function CompetitivePage({ params }: Props) {
   ])
 
   if (!session) return null
+
+  if (competitors.length === 0) {
+    return <EmptyCompetitiveAnalysis analysisId={sessionId} />
+  }
 
   return (
     <div className="space-y-6">

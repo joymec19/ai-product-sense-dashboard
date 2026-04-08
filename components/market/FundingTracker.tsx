@@ -7,41 +7,22 @@ interface FundingTrackerProps {
   competitors: CompetitorData[];
 }
 
-const PLACEHOLDER_FUNDING = [
-  {
-    company: "Notion AI",
-    round: "Series C",
-    amount: "$275M",
-    date: "Jan 2026",
-    lead: "Sequoia",
-  },
-  {
-    company: "Coda",
-    round: "Series D",
-    amount: "$100M",
-    date: "Nov 2025",
-    lead: "General Catalyst",
-  },
-  {
-    company: "Linear",
-    round: "Series B",
-    amount: "$52M",
-    date: "Sep 2025",
-    lead: "Accel",
-  },
-];
-
 export default function FundingTracker({ competitors }: FundingTrackerProps) {
-  const rows =
-    competitors.length > 0
-      ? competitors.slice(0, 3).map((c, i) => ({
-          company: c.name,
-          round: ["Series A", "Series B", "Series C"][i % 3],
-          amount: ["$20M", "$50M", "$120M"][i % 3],
-          date: ["Oct 2025", "Jan 2026", "Mar 2026"][i % 3],
-          lead: ["Andreessen Horowitz", "Sequoia", "Accel"][i % 3],
-        }))
-      : PLACEHOLDER_FUNDING;
+  if (competitors.length === 0) {
+    return (
+      <p className="text-sm text-zinc-500 text-center py-6">
+        No funding data available yet.
+      </p>
+    );
+  }
+
+  const rows = competitors.slice(0, 3).map((c, i) => ({
+    company: c.name,
+    round: ["Series A", "Series B", "Series C"][i % 3],
+    amount: ["$20M", "$50M", "$120M"][i % 3],
+    date: ["Oct 2025", "Jan 2026", "Mar 2026"][i % 3],
+    lead: ["Andreessen Horowitz", "Sequoia", "Accel"][i % 3],
+  }));
 
   return (
     <div className="space-y-3">
