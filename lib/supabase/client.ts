@@ -1,8 +1,13 @@
-import { createBrowserClient } from '@supabase/ssr'
+// lib/supabase/client.ts
+// Use ONLY in Client Components ('use client')
+import { createBrowserClient } from '@supabase/ssr';
 
-export function createClient() {
+export function createSupabaseBrowserClient() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  );
 }
+
+/** @deprecated Use createSupabaseBrowserClient() */
+export const createClient = createSupabaseBrowserClient;
