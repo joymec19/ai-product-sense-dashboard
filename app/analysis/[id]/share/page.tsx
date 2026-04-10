@@ -189,18 +189,21 @@ export default async function SharePage({ params }: PageProps) {
 
   const rawCompetitors = (report?.competitors ?? []) as Competitor[];
 
-  const competitors: CompetitorData[] = rawCompetitors.map((c) => ({
-    name: c.name,
-    pricing: c.pricing,
-    scores: c.scores,
-    ai_sophistication: c.ai_sophistication,
-    ux_score: c.ux_score,
-    mobile_score: c.mobile_score,
-    integration_count: c.integration_count,
-    featureSupport: Object.fromEntries(
-      c.features.map((f) => [f, "full" as SupportStatus])
-    ),
-  }));
+  const competitors: CompetitorData[] = rawCompetitors.map((c) => {
+    const entry: CompetitorData = {
+      name: c.name,
+      pricing: c.pricing,
+      scores: c.scores,
+      featureSupport: Object.fromEntries(
+        c.features.map((f) => [f, "full" as SupportStatus])
+      ),
+    };
+    if (c.ai_sophistication !== undefined) entry.ai_sophistication = c.ai_sophistication;
+    if (c.ux_score !== undefined) entry.ux_score = c.ux_score;
+    if (c.mobile_score !== undefined) entry.mobile_score = c.mobile_score;
+    if (c.integration_count !== undefined) entry.integration_count = c.integration_count;
+    return entry;
+  });
 
   const allFeatures = Array.from(
     new Set(rawCompetitors.flatMap((c) => c.features))
