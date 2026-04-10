@@ -65,8 +65,9 @@ function CustomTooltip({
   active?: boolean;
   payload?: Array<{ payload: DotEntry }>;
 }) {
-  if (!active || !payload?.length) return null;
-  const d = payload[0].payload;
+  const entry = payload?.[0];
+  if (!active || !entry) return null;
+  const d = entry.payload;
   return (
     <div className="rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-xs text-zinc-200 shadow-lg">
       <p className="font-semibold mb-1">{d.name}</p>
@@ -87,7 +88,7 @@ export default function PositioningMap({ competitors }: PositioningMapProps) {
         y: AXIS_MAP[yAxis](c),
         name: c.name,
         r: Math.max(4, Math.min(20, ((c.integration_count ?? 5) / 30) * 20 + 4)),
-        color: c.color ?? COLORS[i % COLORS.length],
+        color: c.color ?? COLORS[i % COLORS.length] ?? '#6366f1',
       })),
     [competitors, xAxis, yAxis]
   );

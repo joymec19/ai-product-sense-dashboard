@@ -25,8 +25,8 @@ export function PositioningMap({ competitors, positioning }: Props) {
   const compById = new Map(competitors.map(c => [c.id, c]))
 
   // Use the first axis pair found (all rows should share the same axis names)
-  const axisX = positioning[0].axis_x_name
-  const axisY = positioning[0].axis_y_name
+  const axisX = positioning[0]?.axis_x_name ?? ''
+  const axisY = positioning[0]?.axis_y_name ?? ''
 
   return (
     <div className="space-y-4">
