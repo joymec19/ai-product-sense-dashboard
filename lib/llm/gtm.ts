@@ -192,7 +192,12 @@ export async function runGTMChain(input: {
   const cb = createHash('sha256').update(`${input.product_name}:${input.category ?? ''}:${input.sessionId}`).digest('hex').slice(0, 16)
 
   const icp = await llm.call(GTM_SYSTEM, buildICPPrompt(input), ICPSchema, { cacheKey: `gtm:icp:${cb}`, cacheTtlSeconds: 86400, maxTokens: 3000 })
-  const positioning = await llm.call(GTM_SYSTEM, buildPositioningStatementPrompt({ product_name: input.product_name, icp, competitive_positioning: input.competitive_positioning, competitive_extraction: input.competitive_extraction }), PositioningStatementSchema, { cacheKey: `gtm:positioning:${cb}`, cacheTtlSeconds: 86400 })
+  const positioning = await llm.call(GTM_SYSTEM, buildPositioningStatementPrompt({
+    product_name: input.product_name,
+    icp,
+    ...(input.competitive_positioning !== undefined && { competitive_positioning: input.competitive_positioning }),
+    ...(input.competitive_extraction !== undefined && { competitive_extraction: input.competitive_extraction }),
+  }), PositioningStatementSchema, { cacheKey: `gtm:positioning:${cb}`, cacheTtlSeconds: 86400 })
   const channels = await llm.call(GTM_SYSTEM, buildChannelStrategyPrompt({ product_name: input.product_name, icp, positioning }), ChannelStrategySchema, { cacheKey: `gtm:channels:${cb}`, cacheTtlSeconds: 86400, maxTokens: 4000 })
   const launch_sequence = await llm.call(GTM_SYSTEM, buildLaunchSequencePrompt({ product_name: input.product_name, icp, positioning, channels }), LaunchSequenceSchema, { cacheKey: `gtm:launch:${cb}`, cacheTtlSeconds: 86400 })
   const metrics = await llm.call(GTM_SYSTEM, buildSuccessMetricsPrompt({ product_name: input.product_name, channels, icp }), SuccessMetricsSchema, { cacheKey: `gtm:metrics:${cb}`, cacheTtlSeconds: 86400, maxTokens: 4000 })

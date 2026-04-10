@@ -26,9 +26,9 @@ export async function POST(req: NextRequest) {
 
     const result = await runMarketChain({
       product_name: body.product_name,
-      category: body.category,
-      geography: body.geography,
       sessionId: body.session_id,
+      ...(body.category !== undefined && { category: body.category }),
+      ...(body.geography !== undefined && { geography: body.geography }),
     })
 
     await saveMarketIntelligence(body.session_id, result)

@@ -71,9 +71,12 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ se
     }
 
     const result = await runGTMChain({
-      product_name: session.product_name, category: session.category,
-      geography: session.geography, sessionId,
-      competitive_extraction, competitive_positioning,
+      product_name: session.product_name,
+      sessionId,
+      ...(session.category !== undefined && { category: session.category }),
+      ...(session.geography !== undefined && { geography: session.geography }),
+      ...(competitive_extraction !== undefined && { competitive_extraction }),
+      ...(competitive_positioning !== undefined && { competitive_positioning }),
     })
 
     // Persist gtm_plans
