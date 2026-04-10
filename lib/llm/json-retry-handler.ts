@@ -65,6 +65,7 @@ export async function withJsonRetry<T>(
 /** Extracts the first JSON object/array from a mixed text response */
 export function extractJsonFromText(text: string): string {
   const jsonMatch = text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
-  if (!jsonMatch) throw new Error('No JSON found in LLM response');
-  return jsonMatch[1];
+  const captured = jsonMatch?.[1];
+  if (!captured) throw new Error('No JSON found in LLM response');
+  return captured;
 }

@@ -3,14 +3,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 // ─── Rate limit config (in-memory fallback if Redis not configured) ───────────
-const RATE_LIMITS: Record<string, { requests: number; windowMs: number }> = {
+type RateLimitConfig = { requests: number; windowMs: number };
+
+const DEFAULT_RATE_LIMIT: RateLimitConfig = { requests: 100, windowMs: 60_000 };
+
+const ROUTE_RATE_LIMITS: Record<string, RateLimitConfig> = {
   '/api/analyze':          { requests: 10,  windowMs: 60_000 },  // 10/min
   '/api/competitive':      { requests: 20,  windowMs: 60_000 },
   '/api/market':           { requests: 20,  windowMs: 60_000 },
   '/api/gtm':              { requests: 10,  windowMs: 60_000 },
   '/api/prd':              { requests: 15,  windowMs: 60_000 },
   '/api/ai-assistant':     { requests: 30,  windowMs: 60_000 },
-  default:                 { requests: 100, windowMs: 60_000 },
 };
 
 // In-memory fallback store (per-instance — fine for development; use Redis in prod)
@@ -114,7 +117,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // ── 3. Rate limiting (per user ID for authenticated routes) ───────────────
-    const limitConfig = RATE_LIMITS[pathname] ?? RATE_LIMITS.default;
+    const limitConfig: RateLimitConfig = ROUTE_RATE_LIMITS[pathname] ?? DEFAULT_RATE_LIMIT;
     const rateLimitKey = `rl:${user.id}:${pathname}`;
     const { allowed, remaining, resetAt } = inMemoryRateLimit(rateLimitKey, limitConfig);
 
