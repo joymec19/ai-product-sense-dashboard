@@ -22,7 +22,7 @@ export class MarketErrorBoundary extends Component<Props, State> {
     return { hasError: true, message: error.message }
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback
 
