@@ -63,6 +63,7 @@ export default function AdjacentMarketMap({
         <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 0 }}>
           {markets.map((_, i) => {
             const pos = BUBBLE_POSITIONS[i];
+            if (!pos) return null;
             const topPct = parseFloat(pos.top) / 100;
             const leftPct = parseFloat(pos.left) / 100;
             return (
@@ -99,6 +100,7 @@ export default function AdjacentMarketMap({
         {/* Adjacent market bubbles */}
         {markets.map((market, i) => {
           const pos = BUBBLE_POSITIONS[i];
+          if (!pos) return null;
           return (
             <div
               key={market}
