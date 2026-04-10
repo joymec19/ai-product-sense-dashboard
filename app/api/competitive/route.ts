@@ -1,3 +1,7 @@
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 // app/api/competitive/route.ts (F1)
 // GET — fetch competitive intelligence snapshot for a session.
 // Useful for client-side data fetching (SWR) without hitting Server Actions.

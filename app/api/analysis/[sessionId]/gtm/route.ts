@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runGTMChain } from '@/lib/llm/gtm'
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 import { LLMError } from '@/lib/LLMService'
 import type { CompanyExtraction, PositioningMap } from '@/lib/llm/competitive'
 

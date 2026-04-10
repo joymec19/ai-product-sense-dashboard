@@ -1,5 +1,9 @@
 // app/api/generate-prd/route.ts
 import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 import { jsonrepair } from "jsonrepair";
 import { PRDSchema, type PRDContent } from "@/lib/schemas/prd";
 import type { Competitor } from "@/lib/schemas/competitor";

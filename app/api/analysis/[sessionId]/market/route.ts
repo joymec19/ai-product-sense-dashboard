@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runMarketChain } from '@/lib/llm/market'
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 import { LLMError } from '@/lib/LLMService'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {

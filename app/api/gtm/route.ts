@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface GtmResult {
@@ -85,7 +89,7 @@ async function tavilySearch(query: string, max = 5): Promise<{ url: string; cont
 function extractJson(raw: string): string {
   const stripped = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
   const fenced = stripped.match(/```(?:json)?\s*([\s\S]*?)```/)
-  if (fenced) return fenced[1].trim()
+  if (fenced?.[1]) return fenced[1].trim()
   const start = stripped.indexOf('{')
   const end = stripped.lastIndexOf('}')
   if (start !== -1 && end > start) return stripped.slice(start, end + 1)

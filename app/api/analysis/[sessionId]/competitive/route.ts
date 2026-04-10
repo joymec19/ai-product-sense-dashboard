@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { runCompetitiveChain } from '@/lib/llm/competitive'
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 import { LLMError } from '@/lib/LLMService'
 import { upsertStrategicGaps } from '@/lib/supabase/competitive'
 

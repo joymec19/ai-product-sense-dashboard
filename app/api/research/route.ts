@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jsonrepair } from "jsonrepair";
 import { CompetitorArraySchema, type Competitor } from "@/lib/schemas/competitor";
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
 

@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
 
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 const SARVAM_BASE_URL = "https://api.sarvam.ai";
 
 export async function POST(req: NextRequest) {

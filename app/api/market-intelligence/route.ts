@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { runMarketChain } from '@/lib/llm/market'
 import { saveMarketIntelligence } from '@/lib/supabase/market-intelligence'
 
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 interface PostBody {
   session_id: string
   product_name: string
