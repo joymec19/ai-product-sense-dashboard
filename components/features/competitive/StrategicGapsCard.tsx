@@ -29,8 +29,8 @@ export function StrategicGapsCard({ gaps }: Props) {
   }
 
   // white_space_summary and recommended_focus are the same on all rows (stored per gap for denormalisation)
-  const whitespace = gaps[0].white_space_summary
-  const recommended = gaps[0].recommended_focus
+  const whitespace = gaps[0]?.white_space_summary
+  const recommended = gaps[0]?.recommended_focus
 
   return (
     <div className="space-y-5">
