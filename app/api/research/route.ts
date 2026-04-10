@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { jsonrepair } from "jsonrepair";
 import { CompetitorArraySchema, type Competitor } from "@/lib/schemas/competitor";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { env } from "@/lib/env";
 
 function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  return createSupabaseServiceClient();
 }
 
 const SYSTEM_PROMPT = `You are a senior market research analyst.
@@ -56,13 +54,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.SARVAM_API_KEY) {
-      console.error("[Config Error] SARVAM_API_KEY is not set");
-      return NextResponse.json(
-        { error: "Server configuration error: SARVAM_API_KEY is missing. Add it to your Vercel environment variables." },
-        { status: 500 }
-      );
-    }
+    // env.SARVAM_API_KEY is validated at startup via lib/env.ts
 
     // ── LLM fetch with retry ─────────────────────────────────────
     const MAX_ATTEMPTS = 3;
@@ -75,7 +67,7 @@ export async function POST(req: NextRequest) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "api-subscription-key": process.env.SARVAM_API_KEY!,
+            "api-subscription-key": env.SARVAM_API_KEY,
           },
           body: JSON.stringify({
             model: "sarvam-m",

@@ -1,5 +1,5 @@
 // app/analysis/[id]/share/page.tsx — public, no auth required
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 import RadarChart from "@/components/charts/RadarChart";
 import FeatureMatrix from "@/components/competitors/FeatureMatrix";
 import type { Competitor } from "@/lib/schemas/competitor";
@@ -18,7 +18,7 @@ interface PageProps {
 }
 
 function getSupabase() {
-  return createClient(
+  return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );

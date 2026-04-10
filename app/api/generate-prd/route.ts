@@ -1,15 +1,13 @@
 // app/api/generate-prd/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { jsonrepair } from "jsonrepair";
 import { PRDSchema, type PRDContent } from "@/lib/schemas/prd";
 import type { Competitor } from "@/lib/schemas/competitor";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { env } from "@/lib/env";
 
 function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  return createSupabaseServiceClient();
 }
 
 // ── Sarvam config ─────────────────────────────────────────────────────────────
@@ -109,7 +107,7 @@ export async function POST(req: NextRequest) {
         signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
-          "api-subscription-key": process.env.SARVAM_API_KEY!,
+          "api-subscription-key": env.SARVAM_API_KEY,
         },
         body: JSON.stringify({
           model: SARVAM_MODEL,

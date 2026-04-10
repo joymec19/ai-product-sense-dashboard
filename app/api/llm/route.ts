@@ -1,16 +1,24 @@
 // app/api/llm/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { env } from "@/lib/env";
 
 const SARVAM_BASE_URL = "https://api.sarvam.ai";
 
 export async function POST(req: NextRequest) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { messages } = await req.json();
 
   const res = await fetch(`${SARVAM_BASE_URL}/v1/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "api-subscription-key": process.env.SARVAM_API_KEY!,
+      "api-subscription-key": env.SARVAM_API_KEY,
     },
     body: JSON.stringify({
       model: "sarvam-m",
