@@ -145,7 +145,7 @@ export default function Home() {
       homeProductContext = config.productContext.content;
     } else if (config.productContext.type === "file" && config.productContext.content) {
       homeProductContext = config.productContext.content.includes("||")
-        ? config.productContext.content.split("||")[1]
+        ? (config.productContext.content.split("||")[1] ?? config.productContext.content)
         : config.productContext.content;
     }
 
