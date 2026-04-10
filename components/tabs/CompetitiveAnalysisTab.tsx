@@ -171,8 +171,8 @@ export default function CompetitiveAnalysisTab() {
   );
 
   const tip = interviewerMode
-    ? (text: string) => text
-    : () => undefined;
+    ? (text: string): string => text
+    : (): string => '';
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">

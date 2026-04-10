@@ -5,11 +5,18 @@ import type { LaunchPhase } from '@/lib/supabase/gtm'
 
 interface Props { phases: LaunchPhase[] }
 
-const PHASE_TYPE_COLORS: Record<string, { bg: string; border: string; dot: string; text: string }> = {
+type PhaseColors = { bg: string; border: string; dot: string; text: string }
+
+const PHASE_TYPE_COLORS: Record<string, PhaseColors> = {
   pre_launch:  { bg: 'bg-zinc-800/60',    border: 'border-zinc-700',      dot: 'bg-zinc-500',    text: 'text-zinc-400' },
   soft_launch: { bg: 'bg-blue-900/30',    border: 'border-blue-800/60',   dot: 'bg-blue-500',    text: 'text-blue-400' },
   growth:      { bg: 'bg-teal-900/30',    border: 'border-teal-800/60',   dot: 'bg-teal-500',    text: 'text-teal-400' },
   scale:       { bg: 'bg-emerald-900/30', border: 'border-emerald-800/60', dot: 'bg-emerald-400', text: 'text-emerald-400' },
+}
+
+const DEFAULT_PHASE_COLORS: PhaseColors = { bg: 'bg-zinc-800/60', border: 'border-zinc-700', dot: 'bg-zinc-500', text: 'text-zinc-400' }
+function getPhaseColors(type: string): PhaseColors {
+  return PHASE_TYPE_COLORS[type] ?? DEFAULT_PHASE_COLORS
 }
 
 export function LaunchSequenceTimeline({ phases }: Props) {
@@ -37,7 +44,7 @@ export function LaunchSequenceTimeline({ phases }: Props) {
   }
 
   return (
-    <CardShell title="Launch Timeline" subtitle={totalWeeks > 0 ? `${totalWeeks} weeks total` : undefined} markdownFn={buildMarkdown}>
+    <CardShell title="Launch Timeline" markdownFn={buildMarkdown} {...(totalWeeks > 0 && { subtitle: `${totalWeeks} weeks total` })}>
       {phases.length === 0 ? <EmptyState message="Launch timeline will appear after GTM generation." /> : (
         <div className="p-4 space-y-4">
           {/* Horizontal timeline track */}
@@ -45,7 +52,7 @@ export function LaunchSequenceTimeline({ phases }: Props) {
             <div className="flex items-stretch gap-0 min-w-[600px]">
               {sorted.map((phase, i) => {
                 const width = ((phase.end_week - phase.start_week + 1) / totalWeeks) * 100
-                const colors = PHASE_TYPE_COLORS[phase.phase_type] ?? PHASE_TYPE_COLORS.pre_launch
+                const colors = getPhaseColors(phase.phase_type)
                 const isActive = active === phase.id
                 return (
                   <div
@@ -89,7 +96,7 @@ export function LaunchSequenceTimeline({ phases }: Props) {
           {detail && (
             <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${PHASE_TYPE_COLORS[detail.phase_type]?.dot}`} />
+                <div className={`w-2 h-2 rounded-full ${getPhaseColors(detail.phase_type).dot}`} />
                 <span className="text-sm font-semibold text-zinc-100">{detail.phase_name}</span>
                 <span className="text-xs text-zinc-500 ml-auto">Week {detail.start_week} – {detail.end_week}</span>
               </div>
