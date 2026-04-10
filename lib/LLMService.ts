@@ -62,7 +62,7 @@ function extractJson(raw: string): string {
 
   // Prefer fenced JSON code block
   const fenced = stripped.match(/```(?:json)?\s*([\s\S]*?)```/)
-  if (fenced) return fenced[1].trim()
+  if (fenced?.[1]) return fenced[1].trim()
 
   // Fall back: find outermost { ... }
   const start = stripped.indexOf('{')
