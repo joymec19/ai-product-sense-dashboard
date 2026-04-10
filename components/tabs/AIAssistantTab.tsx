@@ -48,6 +48,7 @@ export default function AIAssistantTab() {
         const scoreB = b.ratings?.overall ?? b.scores?.market_presence ?? 0;
         return scoreA - scoreB;
       })[0];
+      if (!weakest) return "No competitor data loaded yet.";
       return `Based on overall ratings, **${weakest.name}** appears to be the weakest competitor${
         weakest.weaknesses?.length
           ? `, with key weaknesses including: ${weakest.weaknesses.slice(0, 2).join(", ")}.`
