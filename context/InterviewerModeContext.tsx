@@ -14,6 +14,7 @@ export function InterviewerModeProvider({ children }: { children: React.ReactNod
   const [interviewerMode, setInterviewerMode] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setInterviewerMode(localStorage.getItem("interviewerMode") === "true");
   }, []);
 

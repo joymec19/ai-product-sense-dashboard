@@ -36,6 +36,7 @@ export default function CategoryInput({
   const [showChip, setShowChip] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowChip(wordCount(value) >= 3);
     if (wordCount(value) >= 3) {
       onChange(value, disambiguate(value));

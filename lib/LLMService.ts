@@ -159,6 +159,7 @@ export function getLLMService(): LLMService {
   if (!_llmService) {
     const key = process.env.SARVAM_API_KEY
     if (!key) throw new Error('SARVAM_API_KEY is not set')
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { buildCache } = require('./llm/cache') as typeof import('./llm/cache')
     _llmService = new LLMService(key, buildCache())
   }

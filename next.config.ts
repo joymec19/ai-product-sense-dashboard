@@ -5,9 +5,10 @@ const nextConfig: NextConfig = {
   // ── Strict output ──────────────────────────────────────────
   output: 'standalone', // Required for Vercel serverless + Docker
 
-  // ── TypeScript + ESLint ────────────────────────────────────
+  // ── TypeScript ─────────────────────────────────────────────
+  // NOTE: 'eslint' key was removed from NextConfig in Next.js 15.
+  // ESLint is now controlled via eslint.config.mjs / .eslintrc only.
   typescript: { ignoreBuildErrors: false },
-  eslint: { ignoreDuringBuilds: false },
 
   // ── Security headers ───────────────────────────────────────
   async headers() {
@@ -26,7 +27,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Next.js needs unsafe-eval
               "style-src 'self' 'unsafe-inline' https://api.fontshare.com",
               "font-src 'self' https://api.fontshare.com",
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL} https://api.sarvam.ai https://api.tavily.com`,
+              `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''} https://api.sarvam.ai https://api.tavily.com`,
               "img-src 'self' data: blob: https:",
               "frame-ancestors 'none'",
             ].join('; '),
@@ -47,14 +48,6 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'logo.clearbit.com' },
     ],
   },
-
-  // ── Bundle analysis ────────────────────────────────────────
-  // Run: ANALYZE=true pnpm build
-  ...(process.env.ANALYZE === 'true' && {
-    experimental: {
-      bundlePagesRouterDependencies: true,
-    },
-  }),
 
   // ── Logging ────────────────────────────────────────────────
   logging: {
