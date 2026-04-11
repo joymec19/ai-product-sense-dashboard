@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Sun, Moon, ChevronDown } from "lucide-react";
 import CategoryInput from "@/components/configure/CategoryInput";
 import ProductContext from "@/components/configure/ProductContext";
@@ -315,22 +314,6 @@ export default function Home() {
             loading={isLoading}
           />
         </StepPanel>
-
-        {/* Demo link */}
-        <div className="pt-4 border-t border-zinc-800">
-          <p className="mb-3 text-sm text-zinc-600">Or explore a live demo →</p>
-          <Link
-            href="/analysis/ai-scheduling-demo-2026/share"
-            className="block rounded-xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-left transition-colors hover:border-indigo-500/50 hover:bg-zinc-800"
-          >
-            <p className="font-semibold text-zinc-200">
-              AI Scheduling Apps — Smart Scheduler context
-            </p>
-            <p className="mt-1 text-sm text-zinc-500">
-              8 competitors · PRD pre-generated · Read-only
-            </p>
-          </Link>
-        </div>
       </div>
     </div>
   );
