@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       model: "sarvam-m",
       messages,
       temperature: 0.2,
-      max_tokens: 8192,
+      max_tokens: 6000,
     }),
   });
 

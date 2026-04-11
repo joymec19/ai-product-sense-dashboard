@@ -53,7 +53,9 @@ const DEFAULT_OPTIONS: Required<Omit<LLMCallOptions, 'cacheKey'>> = {
 }
 
 const SARVAM_URL = 'https://api.sarvam.ai/v1/chat/completions'
-const MAX_TOKENS_HARD_CAP = 7500
+// sarvam-m has a total context window of 7192 tokens (prompt + completion).
+// Cap completion tokens well below that to leave room for prompt tokens.
+const MAX_TOKENS_HARD_CAP = 6000
 
 /** Extract the first JSON object from a Sarvam response (which may include prose or <think> blocks). */
 function extractJson(raw: string): string {

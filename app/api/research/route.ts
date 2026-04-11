@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             model: "sarvam-m",
             temperature: 0.2,
-            max_tokens: 7500,
+            max_tokens: 6000,
             messages: [
               { role: "system", content: SYSTEM_PROMPT },
               {
