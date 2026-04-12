@@ -121,12 +121,12 @@ function AnalysisPageContent() {
 }
 
 export default function AnalysisPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ sessionId: string }>();
 
   return (
     <InterviewerModeProvider>
       <ToastProvider>
-        <AnalysisProvider analysisId={params.id}>
+        <AnalysisProvider analysisId={params.sessionId}>
           <AnalysisPageContent />
         </AnalysisProvider>
       </ToastProvider>

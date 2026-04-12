@@ -14,7 +14,7 @@ import {
 } from "@/lib/demo-data";
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ sessionId: string }>;
 }
 
 function getSupabase() {
@@ -146,7 +146,7 @@ function SharePageContent({
 }
 
 export default async function SharePage({ params }: PageProps) {
-  const { id: shareToken } = await params;
+  const { sessionId: shareToken } = await params;
 
   // ── Demo shortcut: serve hardcoded data, no DB required ───────────────────
   if (shareToken === DEMO_SHARE_TOKEN) {

@@ -1,4 +1,4 @@
-// app/api/analysis/[id]/route.ts
+// app/api/analysis/[sessionId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
@@ -8,11 +8,11 @@ function getSupabase() {
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
-  const { id } = await params;
+  const { sessionId } = await params;
 
-  if (!id) {
+  if (!sessionId) {
     return NextResponse.json({ error: "Missing analysis id." }, { status: 400 });
   }
 
@@ -23,18 +23,18 @@ export async function GET(
     supabase
       .from("analyses")
       .select("*")
-      .eq("id", id)
+      .eq("id", sessionId)
       .single(),
 
     supabase
       .from("competitors")
       .select("*")
-      .eq("analysis_id", id),
+      .eq("analysis_id", sessionId),
 
     supabase
       .from("prd_documents")
       .select("*")
-      .eq("analysis_id", id)
+      .eq("analysis_id", sessionId)
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -42,26 +42,26 @@ export async function GET(
     supabase
       .from("market_data")
       .select("*")
-      .eq("analysis_id", id)
+      .eq("analysis_id", sessionId)
       .maybeSingle(),
   ]);
 
   if (analysisRes.error || !analysisRes.data) {
-    console.error("[analysis/[id]] analysis not found:", id, analysisRes.error?.message);
+    console.error("[analysis/[sessionId]] analysis not found:", sessionId, analysisRes.error?.message);
     return NextResponse.json({ error: "Analysis not found." }, { status: 404 });
   }
 
   if (competitorsRes.error) {
-    console.error("[analysis/[id]] competitors fetch error:", competitorsRes.error.message);
+    console.error("[analysis/[sessionId]] competitors fetch error:", competitorsRes.error.message);
   }
 
   if (prdRes.error) {
-    console.error("[analysis/[id]] prd fetch error:", prdRes.error.message);
+    console.error("[analysis/[sessionId]] prd fetch error:", prdRes.error.message);
   }
 
   // market_data table may not exist yet — treat as non-fatal
   if (marketRes.error && marketRes.error.code !== "42P01") {
-    console.error("[analysis/[id]] market_data fetch error:", marketRes.error.message);
+    console.error("[analysis/[sessionId]] market_data fetch error:", marketRes.error.message);
   }
 
   return NextResponse.json({
