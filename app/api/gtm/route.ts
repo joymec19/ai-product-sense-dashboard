@@ -105,7 +105,7 @@ async function llmJson<T>(system: string, user: string): Promise<T> {
     body: JSON.stringify({
       model: 'sarvam-m',
       temperature: 0.3,
-      max_tokens: 4096,
+      max_tokens: 2048,
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
     }),
   })

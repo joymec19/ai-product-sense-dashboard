@@ -47,15 +47,14 @@ export interface LLMCallOptions {
 const DEFAULT_OPTIONS: Required<Omit<LLMCallOptions, 'cacheKey'>> = {
   model: 'sarvam-m',
   temperature: 0.2,
-  maxTokens: 4096,
+  maxTokens: 2048,
   retries: 3,
   cacheTtlSeconds: 3600,
 }
 
 const SARVAM_URL = 'https://api.sarvam.ai/v1/chat/completions'
-// sarvam-m has a total context window of 7192 tokens (prompt + completion).
-// Cap completion tokens well below that to leave room for prompt tokens.
-const MAX_TOKENS_HARD_CAP = 6000
+// sarvam-m starter tier hard limit is 2048 output tokens.
+const MAX_TOKENS_HARD_CAP = 2048
 
 /** Extract the first JSON object from a Sarvam response (which may include prose or <think> blocks). */
 function extractJson(raw: string): string {
