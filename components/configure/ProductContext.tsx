@@ -71,22 +71,26 @@ export default function ProductContext({
   return (
     <div className="space-y-4">
       {/* Option A — File upload */}
-      <button
-        type="button"
-        onClick={() => selectType("file")}
+      <div
         className={`w-full rounded-xl border p-4 text-left transition-colors ${
           selectedType === "file"
             ? "border-indigo-500 bg-indigo-500/10"
             : "border-zinc-700 bg-zinc-800/60 hover:border-zinc-600"
         }`}
       >
-        <p className="font-semibold text-white">Upload your PRD</p>
-        <p className="mt-0.5 text-sm text-zinc-400">
-          Accepts .pdf, .txt, .md files (max 5 MB) or paste a Notion URL
-        </p>
+        <button
+          type="button"
+          onClick={() => selectType("file")}
+          className="w-full text-left"
+        >
+          <p className="font-semibold text-white">Upload your PRD</p>
+          <p className="mt-0.5 text-sm text-zinc-400">
+            Accepts .pdf, .txt, .md files (max 5 MB) or paste a Notion URL
+          </p>
+        </button>
 
         {selectedType === "file" && (
-          <div className="mt-3 space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div className="mt-3 space-y-3">
             {/* Drop zone */}
             <div
               onClick={() => fileRef.current?.click()}
@@ -126,28 +130,29 @@ export default function ProductContext({
             />
           </div>
         )}
-      </button>
+      </div>
 
       {/* Option B — Questionnaire (default selected) */}
-      <button
-        type="button"
-        onClick={() => selectType("questionnaire")}
+      <div
         className={`w-full rounded-xl border p-4 text-left transition-colors ${
           selectedType === "questionnaire"
             ? "border-indigo-500 bg-indigo-500/10"
             : "border-zinc-700 bg-zinc-800/60 hover:border-zinc-600"
         }`}
       >
-        <p className="font-semibold text-white">Answer 5 quick questions</p>
-        <p className="mt-0.5 text-sm text-zinc-400">
-          Takes ~2 minutes — helps tailor the analysis to your product
-        </p>
+        <button
+          type="button"
+          onClick={() => selectType("questionnaire")}
+          className="w-full text-left"
+        >
+          <p className="font-semibold text-white">Answer 5 quick questions</p>
+          <p className="mt-0.5 text-sm text-zinc-400">
+            Takes ~2 minutes — helps tailor the analysis to your product
+          </p>
+        </button>
 
         {selectedType === "questionnaire" && (
-          <div
-            className="mt-3 space-y-3"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="mt-3 space-y-3">
             <textarea
               rows={2}
               placeholder="Q1: What problem does your product solve?"
@@ -190,7 +195,7 @@ export default function ProductContext({
             />
           </div>
         )}
-      </button>
+      </div>
 
       {/* Skip link */}
       <div className="text-center">
