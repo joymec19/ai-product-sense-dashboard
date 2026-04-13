@@ -82,11 +82,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "home_product_context is required (min 10 chars)." }, { status: 400 });
     }
 
-    // ── Verify analysis_id exists ───────────────────────────────────────────
+    // ── Verify analysis_id exists and resolve research_reports FK ──────────
     const supabase = getSupabase();
     const { data: analysisRow, error: analysisLookupErr } = await supabase
       .from("analyses")
-      .select("id")
+      .select("id, category")
       .eq("id", analysis_id)
       .single();
 
@@ -94,6 +94,23 @@ export async function POST(req: NextRequest) {
       console.error("[generate-prd] analysis_id not found:", analysis_id, analysisLookupErr?.message);
       return NextResponse.json({ error: "analysis_id not found." }, { status: 404 });
     }
+
+    // prd_documents.analysis_id FK references research_reports, not analyses.
+    // Look up the matching research_reports row by category.
+    const { data: reportRow, error: reportLookupErr } = await supabase
+      .from("research_reports")
+      .select("id")
+      .eq("category", analysisRow.category)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (reportLookupErr || !reportRow) {
+      console.error("[generate-prd] research_report not found for category:", analysisRow.category, reportLookupErr?.message);
+      return NextResponse.json({ error: "No research report found for this analysis. Run competitive research first." }, { status: 404 });
+    }
+
+    const report_id = reportRow.id;
 
     const userMessage = JSON.stringify({
       home_product_context: home_product_context.trim(),
@@ -196,7 +213,7 @@ export async function POST(req: NextRequest) {
     const { data: insertedPRD, error: dbError } = await supabase
       .from("prd_documents")
       .insert({
-        analysis_id,
+        analysis_id: report_id,
         objective: prd.objective,
         problem_statement: prd.problem_statement,
         solution_narrative: prd.solution_narrative,
