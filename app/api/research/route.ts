@@ -166,9 +166,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "LLM returned malformed JSON." }, { status: 502 });
     }
 
-    const validation = CompetitorArraySchema.safeParse(
-      (parsed as { competitors?: unknown }).competitors
-    );
+    // LLM may return { competitors: [...] }, { data: [...] }, or the array directly.
+    // Walk the top-level keys to find the first array value as a fallback.
+    const parsedObj = parsed as Record<string, unknown>;
+    const rawCompetitors: unknown =
+      parsedObj.competitors ??
+      parsedObj.data ??
+      (Array.isArray(parsed) ? parsed : null) ??
+      Object.values(parsedObj).find(Array.isArray) ??
+      undefined;
+
+    const validation = CompetitorArraySchema.safeParse(rawCompetitors);
 
     if (!validation.success) {
       console.error("[Zod Validation Failed]", validation.error.flatten());
