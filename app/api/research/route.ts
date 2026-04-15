@@ -167,13 +167,17 @@ export async function POST(req: NextRequest) {
     }
 
     // LLM may return { competitors: [...] }, { data: [...] }, or the array directly.
-    // Walk the top-level keys to find the first array value as a fallback.
+    // The last-resort scan must look for an array of objects specifically —
+    // not string arrays like direct_competitors or market_context keys.
+    const isObjectArray = (v: unknown): v is object[] =>
+      Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' && v[0] !== null;
+
     const parsedObj = parsed as Record<string, unknown>;
     const rawCompetitors: unknown =
       parsedObj.competitors ??
       parsedObj.data ??
-      (Array.isArray(parsed) ? parsed : null) ??
-      Object.values(parsedObj).find(Array.isArray) ??
+      (isObjectArray(parsed) ? parsed : null) ??
+      Object.values(parsedObj).find(isObjectArray) ??
       undefined;
 
     const validation = CompetitorArraySchema.safeParse(rawCompetitors);
