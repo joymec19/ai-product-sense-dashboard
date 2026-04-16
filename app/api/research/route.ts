@@ -166,19 +166,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "LLM returned malformed JSON." }, { status: 502 });
     }
 
-    // LLM may return { competitors: [...] }, { data: [...] }, or the array directly.
-    // The last-resort scan must look for an array of objects specifically —
-    // not string arrays like direct_competitors or market_context keys.
+    // LLM may return { competitors: [...] }, { data: [...] }, the array directly,
+    // or a nested structure like { analysis: { competitors: [...] } }.
+    // Recursively search up to 3 levels deep for the largest array of objects.
     const isObjectArray = (v: unknown): v is object[] =>
       Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' && v[0] !== null;
 
-    const parsedObj = parsed as Record<string, unknown>;
-    const rawCompetitors: unknown =
-      parsedObj.competitors ??
-      parsedObj.data ??
-      (isObjectArray(parsed) ? parsed : null) ??
-      Object.values(parsedObj).find(isObjectArray) ??
-      undefined;
+    function findObjectArray(value: unknown, depth = 0): object[] | null {
+      if (depth > 3) return null;
+      if (isObjectArray(value)) return value;
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+      const obj = value as Record<string, unknown>;
+      // Prefer known key names at this level before recursing
+      for (const key of ['competitors', 'data', 'results', 'items', 'companies']) {
+        if (isObjectArray(obj[key])) return obj[key] as object[];
+      }
+      // Pick the largest array of objects found among all values at this level
+      let best: object[] | null = null;
+      for (const v of Object.values(obj)) {
+        const found = findObjectArray(v, depth + 1);
+        if (found && (!best || found.length > best.length)) best = found;
+      }
+      return best;
+    }
+
+    const rawCompetitors: unknown = findObjectArray(parsed);
 
     const validation = CompetitorArraySchema.safeParse(rawCompetitors);
 
