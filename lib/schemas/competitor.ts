@@ -1,43 +1,42 @@
 import { z } from "zod";
 
 const PricingSchema = z.object({
-  model: z.string(),
-  starting_price_usd: z.number().nullable(),
-  has_free_tier: z.boolean(),
+  model: z.string().default('unknown'),
+  starting_price_usd: z.number().nullable().default(null),
+  has_free_tier: z.boolean().default(false),
 });
 
 const RatingsSchema = z.object({
-  g2: z.number().nullable(),
-  capterra: z.number().nullable(),
-  overall: z.number(),
+  g2: z.number().nullable().default(null),
+  capterra: z.number().nullable().default(null),
+  overall: z.number().default(5),
 });
 
 const ScoresSchema = z.object({
-  market_presence: z.number().min(1).max(10),
-  product_depth: z.number().min(1).max(10),
-  ease_of_use: z.number().min(1).max(10),
-  value_for_money: z.number().min(1).max(10),
-  innovation: z.number().min(1).max(10),
+  market_presence: z.number().min(1).max(10).default(5),
+  product_depth: z.number().min(1).max(10).default(5),
+  ease_of_use: z.number().min(1).max(10).default(5),
+  value_for_money: z.number().min(1).max(10).default(5),
+  innovation: z.number().min(1).max(10).default(5),
 });
 
 const MoatScoresSchema = z.object({
-  switching_costs: z.number(),
-  network_effects: z.number(),
-  data_advantages: z.number(),
-  brand: z.number(),
+  switching_costs: z.number().default(5),
+  network_effects: z.number().default(5),
+  data_advantages: z.number().default(5),
+  brand: z.number().default(5),
 });
 
 export const CompetitorSchema = z.object({
   name: z.string(),
-  pricing: PricingSchema,
-  features: z.array(z.string()),
-  ratings: RatingsSchema,
-  positioning: z.string(),
-  strengths: z.array(z.string()),
-  weaknesses: z.array(z.string()),
-  gaps: z.array(z.string()),
-  scores: ScoresSchema,
-  // New fields
+  pricing: PricingSchema.default({ model: 'unknown', starting_price_usd: null, has_free_tier: false }),
+  features: z.array(z.string()).default([]),
+  ratings: RatingsSchema.default({ g2: null, capterra: null, overall: 5 }),
+  positioning: z.string().default(''),
+  strengths: z.array(z.string()).default([]),
+  weaknesses: z.array(z.string()).default([]),
+  gaps: z.array(z.string()).default([]),
+  scores: ScoresSchema.default({ market_presence: 5, product_depth: 5, ease_of_use: 5, value_for_money: 5, innovation: 5 }),
   logo_url: z.string().optional(),
   founded: z.number().int().optional(),
   website: z.string().optional(),
