@@ -172,7 +172,7 @@ export default function Home() {
         return;
       }
 
-      analysisId = data.analysis_id;
+      analysisId = data.session_id ?? data.analysis_id;
       competitors = data.competitors;
     } catch {
       setError("Network error. Please check your connection and try again.");
@@ -202,7 +202,7 @@ export default function Home() {
       }
     }
 
-    router.push(`/analysis/${analysisId}`);
+    router.push(`/analysis/${analysisId}/competitive`);
   };
 
   const isLoading = config.loadingStage !== "idle";

@@ -275,8 +275,34 @@ export async function POST(req: NextRequest) {
       // Non-blocking: the analysis still works, PRD generation just won't find the report
     }
 
+    // 4. Create an analysis_sessions row so the new dashboard route
+    //    (/analysis/[sessionId]/competitive) can resolve the session.
+    //    The (dashboard) layout calls getSession() against analysis_sessions —
+    //    without this row it returns null → notFound() → 404.
+    const { data: insertedSession, error: sessionError } = await supabase
+      .from("analysis_sessions")
+      .insert({
+        product_name: category_input.trim(),
+        category: category_input.trim(),
+        status: "complete",
+        segment_tags: [],
+        custom_competitors: [],
+      })
+      .select("id")
+      .single();
+
+    if (sessionError) {
+      console.error("[Supabase Session Insert Error]", sessionError);
+      // Non-blocking: fall back to legacy analysis_id navigation
+    }
+
     return NextResponse.json(
-      { analysis_id: insertedAnalysis.id, category: category_input.trim(), competitors },
+      {
+        analysis_id: insertedAnalysis.id,
+        session_id: insertedSession?.id ?? null,
+        category: category_input.trim(),
+        competitors,
+      },
       { status: 200 }
     );
   } catch (err) {
