@@ -60,11 +60,40 @@ export async function POST(req: NextRequest) {
 
     // env.SARVAM_API_KEY is validated at startup via lib/env.ts
 
-    // ── LLM fetch with retry ─────────────────────────────────────
+    // ── LLM fetch + parse + validate (all retried together) ──────
     const MAX_ATTEMPTS = 3;
-    let rawContent: string | undefined;
+
+    // Helpers shared across attempts
+    const extractBraces = (s: string): string | null => {
+      const first = s.indexOf("{");
+      const last = s.lastIndexOf("}");
+      return first !== -1 && last > first ? s.slice(first, last + 1) : null;
+    };
+    const stripFences = (s: string) =>
+      s.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
+    const isObjectArray = (v: unknown): v is object[] =>
+      Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' && v[0] !== null;
+
+    function findObjectArray(value: unknown, depth = 0): object[] | null {
+      if (depth > 3) return null;
+      if (isObjectArray(value)) return value;
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+      const obj = value as Record<string, unknown>;
+      for (const key of ['competitors', 'data', 'results', 'items', 'companies']) {
+        if (isObjectArray(obj[key])) return obj[key] as object[];
+      }
+      let best: object[] | null = null;
+      for (const v of Object.values(obj)) {
+        const found = findObjectArray(v, depth + 1);
+        if (found && (!best || found.length > best.length)) best = found;
+      }
+      return best;
+    }
+
+    let competitors: Competitor[] | null = null;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      // ── Fetch ────────────────────────────────────────────────────
       let llmResponse: Response;
       try {
         llmResponse = await fetch("https://api.sarvam.ai/v1/chat/completions", {
@@ -101,7 +130,6 @@ export async function POST(req: NextRequest) {
       if (!llmResponse.ok) {
         const errorBody = await llmResponse.text();
         console.error(`[Sarvam HTTP Error] attempt ${attempt}`, llmResponse.status, errorBody);
-        // Retry on rate-limit or server errors; give up on client errors (4xx except 429)
         if (attempt < MAX_ATTEMPTS && (llmResponse.status === 429 || llmResponse.status >= 500)) {
           await new Promise((r) => setTimeout(r, attempt * 1500));
           continue;
@@ -114,9 +142,9 @@ export async function POST(req: NextRequest) {
 
       const llmData = await llmResponse.json();
       const choice = llmData.choices?.[0];
-      const content: string | undefined = choice?.message?.content;
+      const rawContent: string | undefined = choice?.message?.content;
 
-      if (!content) {
+      if (!rawContent) {
         const finishReason = choice?.finish_reason;
         console.error(`[Sarvam empty content] attempt ${attempt} finish_reason:`, finishReason);
         if (attempt < MAX_ATTEMPTS) {
@@ -129,80 +157,43 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      rawContent = content;
+      // ── Parse ────────────────────────────────────────────────────
+      let parsed: unknown;
+      try {
+        const noThink = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+        const jsonString =
+          extractBraces(stripFences(noThink)) ??
+          extractBraces(stripFences(rawContent)) ??
+          rawContent;
+        parsed = JSON.parse(jsonrepair(jsonString));
+      } catch (e) {
+        console.error(`[JSON Parse Error] attempt ${attempt}`, e);
+        console.error("[Raw content (first 500)]", rawContent.slice(0, 500));
+        if (attempt < MAX_ATTEMPTS) { await new Promise((r) => setTimeout(r, attempt * 1500)); continue; }
+        return NextResponse.json({ error: "LLM returned malformed JSON." }, { status: 502 });
+      }
+
+      // ── Validate ─────────────────────────────────────────────────
+      const rawCompetitors = findObjectArray(parsed);
+      console.log(`[research] attempt ${attempt} — rawCompetitors length:`, Array.isArray(rawCompetitors) ? rawCompetitors.length : rawCompetitors);
+
+      const validation = CompetitorArraySchema.safeParse(rawCompetitors);
+      if (!validation.success) {
+        console.error(`[Zod Validation Failed] attempt ${attempt}`, validation.error.flatten());
+        if (attempt < MAX_ATTEMPTS) { await new Promise((r) => setTimeout(r, attempt * 1500)); continue; }
+        return NextResponse.json(
+          { error: "LLM response failed schema validation.", issues: validation.error.flatten() },
+          { status: 422 }
+        );
+      }
+
+      competitors = validation.data;
       break;
     }
 
-    if (!rawContent) {
-      return NextResponse.json({ error: "LLM did not return content after retries." }, { status: 502 });
+    if (!competitors) {
+      return NextResponse.json({ error: "LLM did not return valid competitors after retries." }, { status: 502 });
     }
-
-    // ── Parse & validate ──────────────────────────────────────────
-    let parsed: unknown;
-    try {
-      // Extract the outermost JSON object, tolerating <think> blocks, code fences, and surrounding text.
-      const extractBraces = (s: string): string | null => {
-        const first = s.indexOf("{");
-        const last = s.lastIndexOf("}");
-        return first !== -1 && last > first ? s.slice(first, last + 1) : null;
-      };
-      const stripFences = (s: string) =>
-        s.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
-      const noThink = rawContent
-        .replace(/<think>[\s\S]*?<\/think>/gi, "")
-        .trim();
-      // 1. Strip think blocks + fences → extract {…}
-      // 2. Fallback: skip think stripping (handles JSON inside an unclosed <think>)
-      // 3. Last resort: hand everything to jsonrepair as-is
-      const jsonString =
-        extractBraces(stripFences(noThink)) ??
-        extractBraces(stripFences(rawContent)) ??
-        rawContent;
-
-      parsed = JSON.parse(jsonrepair(jsonString));
-    } catch (e) {
-      console.error("[LLM JSON Parse Error]", e);
-      console.error("[Raw content (first 1000 chars)]", rawContent.slice(0, 1000));
-      return NextResponse.json({ error: "LLM returned malformed JSON." }, { status: 502 });
-    }
-
-    // LLM may return { competitors: [...] }, { data: [...] }, the array directly,
-    // or a nested structure like { analysis: { competitors: [...] } }.
-    // Recursively search up to 3 levels deep for the largest array of objects.
-    const isObjectArray = (v: unknown): v is object[] =>
-      Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' && v[0] !== null;
-
-    function findObjectArray(value: unknown, depth = 0): object[] | null {
-      if (depth > 3) return null;
-      if (isObjectArray(value)) return value;
-      if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-      const obj = value as Record<string, unknown>;
-      // Prefer known key names at this level before recursing
-      for (const key of ['competitors', 'data', 'results', 'items', 'companies']) {
-        if (isObjectArray(obj[key])) return obj[key] as object[];
-      }
-      // Pick the largest array of objects found among all values at this level
-      let best: object[] | null = null;
-      for (const v of Object.values(obj)) {
-        const found = findObjectArray(v, depth + 1);
-        if (found && (!best || found.length > best.length)) best = found;
-      }
-      return best;
-    }
-
-    const rawCompetitors: unknown = findObjectArray(parsed);
-
-    const validation = CompetitorArraySchema.safeParse(rawCompetitors);
-
-    if (!validation.success) {
-      console.error("[Zod Validation Failed]", validation.error.flatten());
-      return NextResponse.json(
-        { error: "LLM response failed schema validation.", issues: validation.error.flatten() },
-        { status: 422 }
-      );
-    }
-
-    const competitors: Competitor[] = validation.data;
 
     // ── Persist to Supabase ───────────────────────────
     const supabase = getSupabase();
