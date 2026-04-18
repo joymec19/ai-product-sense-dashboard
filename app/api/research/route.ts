@@ -5,7 +5,7 @@ import { CompetitorArraySchema, type Competitor } from "@/lib/schemas/competitor
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
-import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
 
 function getSupabase() {
@@ -279,17 +279,24 @@ export async function POST(req: NextRequest) {
     //    (/analysis/[sessionId]/competitive) can resolve the session.
     //    The (dashboard) layout calls getSession() against analysis_sessions —
     //    without this row it returns null → notFound() → 404.
-    const { data: insertedSession, error: sessionError } = await supabase
-      .from("analysis_sessions")
-      .insert({
-        product_name: category_input.trim(),
-        category: category_input.trim(),
-        status: "complete",
-        segment_tags: [],
-        custom_competitors: [],
-      })
-      .select("id")
-      .single();
+    //    We need user_id (NOT NULL) so fetch the authenticated user from cookies.
+    const authClient = await createSupabaseServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+
+    const { data: insertedSession, error: sessionError } = user
+      ? await supabase
+          .from("analysis_sessions")
+          .insert({
+            user_id: user.id,
+            product_name: category_input.trim(),
+            category: category_input.trim(),
+            status: "complete",
+            segment_tags: [],
+            custom_competitors: [],
+          })
+          .select("id")
+          .single()
+      : { data: null, error: new Error("No authenticated user — skipping session insert") };
 
     if (sessionError) {
       console.error("[Supabase Session Insert Error]", sessionError);
